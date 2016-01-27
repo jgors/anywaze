@@ -29,14 +29,14 @@ prod = kafka.SimpleProducer(cluster, async=False)
 
 
 # produce msgs
-datafile = '../../waze_test_data/waze_data/philly.txt'
+datafile = '/home/ubuntu/waze_data/{}.txt'.format(city)
 # datafile = '/home/ubuntu/data_raw/{}'.format(city)
 
 for msg in open(datafile, 'r'):
     msg = msg.strip()   # b/c of a newline char i put at the end
-    # d = json.loads(msg)
-    # prod.send_messages(topic, json.dumps(d))
-
-    prod.send_messages(topic, msg)  # just send the string instead of dict
+    data = json.loads(msg)
+    data.update({'city': city})
+    prod.send_messages(topic, json.dumps(data))
+    # prod.send_messages(topic, msg)  # just send the string instead of dict
 
 
