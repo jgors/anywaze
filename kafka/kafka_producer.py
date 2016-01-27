@@ -10,7 +10,7 @@ import sys
 import json
 import kafka
 
-city, topic = sys.argv[1]
+city = topic = sys.argv[1]
 
 # city = 'philly.txt'
 # topic = 'philly-test'
