@@ -20,12 +20,10 @@ partitions = 1
 cmd =  '/usr/local/kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181'
 cmd += ' --replication-factor {} --partitions {}'.format(replication_factor, partitions)
 
-for machine, cities in envir_vars.cities.items():
-    for city in cities:
-        city_specific_cmd = '{} --topic {}'.format(cmd, city)
-        print city_specific_cmd
-        print
-        # sproc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-        # out, err = sproc.communicate()
-        # if err:
-            # print "ERROR:  something didn't work trying to create topic\n{}".format(city_specific_cmd)
+for city in envir_vars.cities_lat_and_long:
+    city_specific_cmd = '{} --topic {}'.format(cmd, city)
+    print city_specific_cmd
+    sproc = subprocess.Popen(city_specific_cmd, stdout=subprocess.PIPE, shell=True)
+    out, err = sproc.communicate()
+    if err:
+        print "ERROR:  something didn't work trying to create topic\n{}".format(city_specific_cmd)
