@@ -20,5 +20,6 @@ for city in envir_vars.cities_lat_and_long.keys():
     cmd += ' --alter --topic {} --config retention.ms={}'.format(city, ms_in_a_month)
     sproc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     out, err = sproc.communicate()
+    print out
     if err:
         print "ERROR:  something didn't work trying to change retention with:\n{}".format(cmd)
