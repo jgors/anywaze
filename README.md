@@ -1,1 +1,1 @@
-code for my data insight project (more details to come).
+code for my data insight project (more details to come soon).
