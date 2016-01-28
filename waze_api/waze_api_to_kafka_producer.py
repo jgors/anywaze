@@ -152,7 +152,7 @@ while tries <= 20:
             # don't email me right away...give it a some tries before doing so
             email_me_on_failure(msg, 'err')
         tries += 1
-        time.sleep(1)   # let the webservers chill for a bit if were err'ing out
+        time.sleep(1)   # let the webservers chill for a bit if we're err'ing out
         continue
 
     try:
