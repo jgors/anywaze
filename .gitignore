@@ -1,1 +1,2 @@
 *.pyc
+**/waze_api/logs
