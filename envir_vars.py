@@ -3,8 +3,15 @@
 #----------------------------------------------------------------
 # Author: Jason Gors <jasonDOTgorsATgmail>
 # Creation Date: 01-26-2016
-# Purpose:
+# Purpose: since this isn't a python pkg (yet) pull this info in to
+# script in this project like so:
+#
+# import sys, os
+# parent_dir = os.path.dirname(os.getcwd())
+# sys.path.append(parent_dir)
+# import envir_vars
 #----------------------------------------------------------------
+
 
 me = 'jason.gors'
 
