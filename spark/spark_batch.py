@@ -6,39 +6,44 @@
 # Purpose:
 #----------------------------------------------------------------
 
-import json
+# import json
+# import pyspark
 from pyspark import SparkConf, SparkContext, SQLContext
-import pyspark
 
-# NOTE submit jobs to spark like so (this would be for a scala script):
-# $ spark-submit --class price_data --master spark://master_hostname:7077 target/scala-2.10/price_data_2.10-1.0.jar
+# NOTE submit jobs to spark like so:
+# spark-submit --master spark://ip-172-31-1-87:7077 --packages TargetHolding/pyspark-cassandra:0.1.5 ~/wazted/spark/spark_batch.py
 # or
 # $ cd $SPARK_HOME
 # $ ./bin/pyspark SimpleApp.py
 
+# NOTE this works to run it
+
 # to start the ipython spark repl
 # IPYTHON=1 $SPARK_HOME/bin/pyspark --master spark://ip-172-31-1-70:7077
 # doesn't work...not sure why:
-# IPYTHON=1 $SPARK_HOME/bin/pyspark --master spark://ip-172-31-1-70:7077 --executor-memory 6000M --driver-memory 6000M
+# IPYTHON=1 $SPARK_HOME/bin/pyspark --master spark://ip-172-31-1-70:7077 --executor-memory 12000M --driver-memory 12000M
+
 
 # NOTE this would be for running spark stand-alone (not spark interactive)
 # sc = SparkContext("local", "App Name", pyFiles=['MyFile.py', 'lib.zip', 'app.egg'])
 conf = (SparkConf()
          # .setMaster("local")
-         .setAppName("jg_sparkjob_1")
+         .setAppName("sparkjob_1")
          # .set("spark.executor.memory", "1g")
          )
 sc = SparkContext(conf=conf)
-sc = SQLContext(sc)
+# sc_sql = SQLContext(sc)
+
+
 
 
 
 # NOTE START FROM HERE
-from pyspark import SQLContext
 # from pyspark.sql import SQLContext    # same thing
+# from pyspark import SQLContext
 
-pub_dns = 'ec2-52-89-106-226.us-west-2.compute.amazonaws.com'   # this is the master node (where kafka is waiting)
 topic = 'san-fran-small-wo-newline'
+pub_dns = 'ec2-52-89-106-226.us-west-2.compute.amazonaws.com'   # this is the master node (where kafka is waiting)
 
 # For example:  /camus/topics/san-fransisco/hourly/2016/01/21/10
 # data_path_on_hdfs = '/camus/topics/*/*/*/*/*/*'     # everything
@@ -96,14 +101,14 @@ json_data = sc_sql.read.json(data_path)
 
 
 # works
-def get_alerts(row):
-    locations = []
-    for alert in row.alerts:
-        if alert.type == 'POLICE':
-            locations.append((alert.latitude, alert.longitude))
-    return (row.time_stamp, len(locations), locations)
+# def get_alerts(row):
+    # locations = []
+    # for alert in row.alerts:
+        # if alert.type == 'POLICE':
+            # locations.append((alert.latitude, alert.longitude))
+    # return (row.time_stamp, len(locations), locations)
 
-result = json_data.map(get_alerts)
+# result = json_data.map(get_alerts)
 
 
 
@@ -128,10 +133,12 @@ def get_alerts(row):
         # row_reformatted = [('time_stamp', row.time_stamp),
                             # ('lat', alert.latitude), ('lon', alert.longitude),
                             # ('type', alert.type), ('subtype', alert.subType)]
-        row_reformatted = {'time_stamp': row.time_stamp,
-                           'lat': alert.latitude, 'lon': alert.longitude,
+        row_reformatted = {'time_stamp': float(row.time_stamp),     # NOTE should make this a float here or later?
+                           'lat': float(alert.latitude), 'lon': float(alert.longitude),
                            # 'lat_and_lon': (alert.latitude, alert.longitude),
-                           'type': alert.type, 'subtype': alert.subType}
+                           'type': alert.type, 'subtype': alert.subType,
+                           # 'city': row.city, # TODO uncomment this for the real data
+                           'numOfThumbsUp': alert.numOfThumbsUp}
         alerts.append(row_reformatted)
         # df = sc_sql.createDataFrame(row_reformatted)
         # df.saveAsTextFile(hdfs_outpath)
@@ -148,9 +155,13 @@ rfm = result.flatMap(lambda row: [alert for alert in row])
 # result.saveAsTextFile(hdfs_outpath)
 
 rfm_df = rfm.toDF()
-rfm_df.count()
+rfm_df.cache()
+# rfm_df.checkpoint()
+
+# rfm_df.count()
 # rfm_df_dedup_1 = rfm_df.dropDuplicates(['lat_and_lon'])
-rfm_df_dedup_2 = rfm_df.dropDuplicates(['lat', 'lon'])
+rfm_df_deduped = rfm_df.dropDuplicates(['lat', 'lon', 'type'])
+print rfm_df_deduped.sort('time_stamp').collect()
 
 
 # maybe something like this?
@@ -216,7 +227,7 @@ rfm_df_dedup_2 = rfm_df.dropDuplicates(['lat', 'lon'])
 
 
 
-
+raise SystemExit
 
 ##############################################
 # NOTE to save to casandra
