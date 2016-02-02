@@ -26,7 +26,7 @@ import sys
 if __name__ == "__main__":
     sc = SparkContext(appName="PythonStreamingKafka")
     # ssc = StreamingContext(sc, 2)   # every 2 seconds
-    ssc = StreamingContext(sc, 1)   # every 2 seconds
+    ssc = StreamingContext(sc, 1)
 
 
     # topics = {'chicago': 1, 'nyc': 1}
@@ -42,11 +42,10 @@ if __name__ == "__main__":
     lines = kafkaStream.map(lambda x: x[1])
     # lines.pprint()
 
-
     def get_useful_info(alerts):
         d = {}  # {(lat, lng): [type, subType]
         for alert in alerts:
-            d.update({(alert['latitude'], alert['longitude']): [alert['type'], alert['subType']]})
+            d.update({(alert['latitude'], alert['longitude']): [alert['type'], alert['subType'], alert['numOfThumbsUp']]})
         return d
 
     try:
@@ -58,27 +57,13 @@ if __name__ == "__main__":
         output = lines.map(lambda l: json.loads(l)["alerts"])   # a list of dicts
         alerts_now = output.map(get_useful_info)
         alerts_now.pprint()
-        print
     except Exception as e:
-        # TODO log these to file
+        # TODO log these to file, but don't let some corrupted json response crash it all
         print "ERROR: something bad happened", e
 
     ssc.start()
     ssc.awaitTermination()
 
-
-
-
-    '''
-    zkQuorum, topic = '52.89.106.226', 'nyc'
-    kvs = KafkaUtils.createStream(ssc, zkQuorum, "spark-streaming-consumer", {topic: 1})
-    lines = kvs.map(lambda x: x[1])
     # counts = lines.flatMap(lambda line: line.split(" ")) \
         # .map(lambda word: (word, 1)) \
         # .reduceByKey(lambda a, b: a+b)
-    alerts = lines.map(lambda line: line.alerts)
-    alerts.pprint()
-
-    ssc.start()
-    ssc.awaitTermination()
-    '''
