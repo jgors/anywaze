@@ -17,8 +17,8 @@ from pyspark import SparkConf, SparkContext, SQLContext
 
 # NOTE submit jobs to spark like so:
 # this way
-# $SPARK_HOME/bin/spark-submit --executor-memory 12000M --driver-memory 12000M spark_batch.py
-# not this
+# $SPARK_HOME/bin/spark-submit --master spark://ip-172-31-1-87:7077 --executor-memory 14000M --driver-memory 14000M spark_batch.py
+# or specify libs
 # spark-submit --master spark://ip-172-31-1-87:7077 --packages TargetHolding/pyspark-cassandra:0.1.5 ~/wazted/spark/spark_batch.py
 
 # to start the ipython spark repl
