@@ -3,8 +3,15 @@
 #----------------------------------------------------------------
 # Author: Jason Gors <jasonDOTgorsATgmail>
 # Creation Date: 01-26-2016
-# Purpose:
+# Purpose: since this isn't a python pkg (yet) pull this info in to
+# script in this project like so:
+#
+# import sys, os
+# parent_dir = os.path.dirname(os.getcwd())
+# sys.path.append(parent_dir)
+# import envir_vars
 #----------------------------------------------------------------
+
 
 me = 'jason.gors'
 
@@ -24,6 +31,16 @@ me = 'jason.gors'
     # machine_5 = ['houston', 'philly', 'baltimore', 'san_francisco'],
     # machine_6 = ['austin', 'cincinnati', 'st_louis', 'tampa', 'san_diego'],
 # )
+
+eastern = ['nyc', 'boston', 'atlanta', 'miami', 'detroit', 'dc', 'philly', 'baltimore', 'cincinnati', 'tampa']
+central = ['minneapolis', 'kansas_city', 'chicago', 'dallas', 'houston', 'austin', 'st_louis']
+mountain = ['denver', 'phoenix']
+pacific = ['mountain_view', 'los_angeles', 'seattle', 'portland','san_francisco', 'san_diego']
+time_zones = {city: 'eastern' for city in eastern}
+time_zones.update({city: 'central' for city in central})
+time_zones.update({city: 'mountain' for city in mountain})
+time_zones.update({city: 'pacific' for city in pacific})
+
 
 cities_lat_and_long = {
     # got city center lat and long from:    http://www.latlong.net (google maps api)
