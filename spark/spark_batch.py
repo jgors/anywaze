@@ -6,17 +6,20 @@
 # Purpose:
 #----------------------------------------------------------------
 
-# import json
-# import pyspark
+import sys, os
+parent_dir = os.path.dirname(os.getcwd())
+sys.path.append(parent_dir)
+import envir_vars
+
+from time import tzset, strftime, gmtime, timezone
+from os import environ
 from pyspark import SparkConf, SparkContext, SQLContext
 
 # NOTE submit jobs to spark like so:
+# this way
+# $SPARK_HOME/bin/spark-submit --executor-memory 12000M --driver-memory 12000M spark_batch.py
+# not this
 # spark-submit --master spark://ip-172-31-1-87:7077 --packages TargetHolding/pyspark-cassandra:0.1.5 ~/wazted/spark/spark_batch.py
-# or
-# $ cd $SPARK_HOME
-# $ ./bin/pyspark SimpleApp.py
-
-# NOTE this works to run it
 
 # to start the ipython spark repl
 # IPYTHON=1 $SPARK_HOME/bin/pyspark --master spark://ip-172-31-1-70:7077
@@ -28,213 +31,124 @@ from pyspark import SparkConf, SparkContext, SQLContext
 # sc = SparkContext("local", "App Name", pyFiles=['MyFile.py', 'lib.zip', 'app.egg'])
 conf = (SparkConf()
          # .setMaster("local")
-         .setAppName("sparkjob_1")
+         .setAppName("mysparkjob")
          # .set("spark.executor.memory", "1g")
          )
 sc = SparkContext(conf=conf)
-# sc_sql = SQLContext(sc)
+sc.addPyFile('../envir_vars.py')
+sc_sql = SQLContext(sc)
 
-
-
-
-
-# NOTE START FROM HERE
-# from pyspark.sql import SQLContext    # same thing
-# from pyspark import SQLContext
-
-topic = 'san-fran-small-wo-newline'
 pub_dns = 'ec2-52-89-106-226.us-west-2.compute.amazonaws.com'   # this is the master node (where kafka is waiting)
 
-# For example:  /camus/topics/san-fransisco/hourly/2016/01/21/10
-# data_path_on_hdfs = '/camus/topics/*/*/*/*/*/*'     # everything
-# data_path_on_hdfs = '/camus/topics/san-fransisco/*/*/*/*/*'
-# data_path_on_hdfs = '/camus/topics/chicago/hourly/2016/01/28/06/*'
-data_path_on_hdfs = '/camus/topics/{}/*/*/*/*/*'.format(topic)
+cities = envir_vars.cities_lat_and_long.keys()
+# cities = ['atlanta']
+# cities = ['san-fran-small-wo-newline']
+# topic = cities[0]
+for city in cities:
+    topic = city
 
-data_path = "hdfs://{}:9000/{}".format(pub_dns, data_path_on_hdfs)
-
-
-
-#################################
-# NOTE not using this
-'''
-# f = sc.textFile("hdfs://<public_dns>:9000/user/test.txt")
-rdd = sc.textFile(data_path)#.cache()
-# rdd_dicts = rdd.map(json.loads)
-rdd_dicts = rdd.map(lambda ln: json.loads(ln))
-# jd = json_dict.take(1)
-# police = [alert for alert in jd[0]['alerts'] if alert['type']=='POLICE']
-
-alerts = rdd_dicts.map(lambda x: x['alerts'])
-print alerts.take(1)
-
-alerts = rdd_dicts.map(lambda x: x['alerts']).filter(lambda x: x=='POLICE')
-# police = alerts.filter(lambda x: x['type']=='POLICE')
-# print police.take(1)
-print alerts.take(1)
-'''
-#################################
+    # For example:  camus/topics/san_fransisco/hourly/2016/01/21/10
+    data_path_in_hdfs = 'camus/topics/{}/*/*/*/*/*'.format(topic)
+    # data_path_in_hdfs = 'testing/{}'.format(topic)
+    # data_path_in_hdfs = 'testing/{}/part-r-00184-f5234aaf-93dc-412a-8cea-ca6354e1f72f.gz.parquet'.format(topic)
 
 
+    hdfs_data_path = "hdfs://{}:9000/{}"
+    hdfs_inpath =  hdfs_data_path.format(pub_dns, data_path_in_hdfs)
 
-##############################
-# works
-sc_sql = SQLContext(sc)
-json_data = sc_sql.read.json(data_path)
-# json_data = sc_sql.jsonFile(data_path)
+    json_data = sc_sql.read.json(hdfs_inpath)
+    # json_data.printSchema()
 
-# json_data.printSchema()
-
-# j_first = json_data.take(1)
-# type(j_first[0])  # each entry is a pyspark.sql.types.Row object
-
-# row = json_data.first()
-# print row.time_stamp
-# for alert in row.alerts:
-    # if alert.type == 'POLICE':
-        # # return i.latitude
-        # print alert
-
-# def func(a):
-    # pass
-# something = json_data.map(lambda a: (a.latitude, a.longitude, a.type), x.time_stamp)
+    # works
+    # def get_alerts(row):
+        # locations = []
+        # for alert in row.alerts:
+            # if alert.type == 'POLICE':
+                # locations.append((alert.latitude, alert.longitude))
+        # return (row.time_stamp, len(locations), locations)
+    # result = json_data.map(get_alerts)
 
 
-# works
-# def get_alerts(row):
-    # locations = []
-    # for alert in row.alerts:
-        # if alert.type == 'POLICE':
-            # locations.append((alert.latitude, alert.longitude))
-    # return (row.time_stamp, len(locations), locations)
+    def get_alerts(row):
+        alerts = []
+        for alert in row.alerts:
+            # save back to hdfs below and then read those hdfs files back in later;
 
-# result = json_data.map(get_alerts)
+            # convert to proper date time for cassandra
+            # https://docs.datastax.com/en/cql/3.0/cql/cql_reference/timestamp_type_r.html
+            # yyyy-mm-dd HH:mm:ssZ
+            # https://pymotw.com/2/time/#working-with-time-zones
+            data_timezone = envir_vars.time_zones[city]
+            if data_timezone == 'eastern':
+                environ['TZ'] = 'US/Eastern'
+                # dt += ':-0500'
+            elif data_timezone == 'central':
+                environ['TZ'] = 'US/Central'
+                # dt += ':-0600'
+            elif data_timezone == 'mountain':
+                environ['TZ'] = 'US/Mountain'
+                # dt += ':-0700'
+            elif data_timezone == 'pacific':
+                environ['TZ'] = 'US/Pacific'
+                # dt += ':-0800'
+            tzset()
+            row_ts = row.time_stamp - timezone
+            dt = strftime("%Y-%m-%d %H:%M", gmtime(row_ts))
+            wkday = strftime("%A", gmtime(row_ts))
 
-
-
-
-
-
-
-
-
-# data_path_on_hdfs = '/camus/topics/chicago/hourly/2016/01/28/06/*'
-# data_path_on_hdfs = '/waze_data/topics/{}/'.format(topic)
-data_path_out_hdfs = '/testing/{}/'.format(topic)
-hdfs_outpath = "hdfs://{}:9000/{}".format(pub_dns, data_path_out_hdfs)
-
-def get_alerts(row):
-    alerts = []
-    for alert in row.alerts:
-        # if alert.type == 'POLICE':
-        # TODO save back to hdfs here and then read those hdfs files back in further down
-        # in this script.  so each line would look like:
-        # {'time_stamp': 1234345, 'lat': 2342, 'lon': 1234, 'type': 'police', 'subtype': 'hidden_police'}
-        # row_reformatted = [('time_stamp', row.time_stamp),
-                            # ('lat', alert.latitude), ('lon', alert.longitude),
-                            # ('type', alert.type), ('subtype', alert.subType)]
-        row_reformatted = {'time_stamp': float(row.time_stamp),     # NOTE should make this a float here or later?
-                           'lat': float(alert.latitude), 'lon': float(alert.longitude),
-                           # 'lat_and_lon': (alert.latitude, alert.longitude),
-                           'type': alert.type, 'subtype': alert.subType,
-                           # 'city': row.city, # TODO uncomment this for the real data
-                           'numOfThumbsUp': alert.numOfThumbsUp}
-        alerts.append(row_reformatted)
-        # df = sc_sql.createDataFrame(row_reformatted)
-        # df.saveAsTextFile(hdfs_outpath)
-        # locations.update({(alert.latitude, alert.longitude): row.time_stamp})
-        # print row_reformatted
-    return alerts
+            row_reformatted = {'time_stamp': int(row_ts),
+                               'datetime': dt,
+                               'weekday': wkday,
+                               'lat': float(alert.latitude), 'lng': float(alert.longitude),
+                               'type': alert.type, 'subtype': alert.subType,
+                               'city': row.city, # uncomment this for the real data
+                               'numOfThumbsUp': alert.numOfThumbsUp}
+            alerts.append(row_reformatted)
+        return alerts
 
 
-result = json_data.map(get_alerts)
-rfm = result.flatMap(lambda row: [alert for alert in row])
-# rfm.saveAsTextFile(hdfs_outpath)  # this would be what i'd want NOTE it works
+    alerts = json_data.map(get_alerts)
+    afm = alerts.flatMap(lambda row: [alert for alert in row])
+    # print afm.count()
 
-# output = sc_sql.createDataFrame(rfm)
-# result.saveAsTextFile(hdfs_outpath)
+    # afm.saveAsTextFile(hdfs_outpath)
+    afm_df = afm.toDF()
+    afm_df.cache()
+    # afm_df.count()
 
-rfm_df = rfm.toDF()
-rfm_df.cache()
-# rfm_df.checkpoint()
-
-# rfm_df.count()
-# rfm_df_dedup_1 = rfm_df.dropDuplicates(['lat_and_lon'])
-rfm_df_deduped = rfm_df.dropDuplicates(['lat', 'lon', 'type'])
-print rfm_df_deduped.sort('time_stamp').collect()
+    afm_df_deduped = afm_df.dropDuplicates(['lat', 'lng', 'type'])
+    afm_df_deduped_sorted = afm_df_deduped.sort('time_stamp')#.collect()
+    # print afm_df_deduped_sorted.count()
 
 
-# maybe something like this?
-# result = json_data.select(json_data.alerts)
-# result_new = result.flatMap(lambda r: r)
-
-
-# def func(row):
-    # d_merged = {}
-    # for d in row:
-        # d_merged.update(d)
-
-# result = json_data.map(get_alerts).map(func)
-
-
-
-
-##############################
-
-
-
-#########################
-# sql_sc = SQLContext(sc)
-# json_data = sql_sc.jsonFile(data_path)
-# jd_1 = json_data.take(1)[0]
-# alerts = jd_1.__getattr__('alerts')
-# alerts_rdd = sc.parallelize(alerts)
-# police_alerts = alerts_rdd.filter(lambda x: x.type=='POLICE')
-# police_alerts.count()
-
-
-# def my_func(jd):
-    # time_stamp = jd.__getattr__('time_stamp')
-    # alerts = jd.__getattr__('alerts')
-    # return time_stamp, alerts
-
-    # alerts_rdd = sc.parallelize(alerts)
-    # police_alerts = alerts_rdd.filter(lambda x: x.type=='POLICE').map(lambda a: (time_stamp, a))
-    # # police_alerts_cnt = police_alerts.count()
-    # return police_alerts
-
-
-# sql_sc = SQLContext(sc)
-# json_data = sql_sc.jsonFile(data_path)
-# police_alerts = json_data.map(my_func)
-# police_alerts.take(1)#.count()
-
-# alerts = [i for i in json_data.take(1)[0].__getattr__('alerts') if i['type']=='POLICE'] #[0]#.__getattr__('type')
-# x = [i for i in json_data.take(1)[0].__getattr__('alerts')[i]]#.__getattr__('type')
-# x = json_data.take(1)[0].__getattr__('alerts')
-#########################
-
-
-# from the tutorial example
-# counts = file.flatMap(lambda line: line.split(" "))\
-       # .map(lambda word: (word, 1))\
-       # .reduceByKey(lambda a, b: a + b)
-
-# res = counts.collect()
-# for val in res:
-    # print val
-
-
-
+    # For saving
+    # data_path_out_hdfs = 'testing/{}/'.format(topic)
+    data_path_out_hdfs = 'waze_data/topics/{}/'.format(topic)
+    hdfs_outpath = hdfs_data_path.format(pub_dns, data_path_out_hdfs)
+    #
+    # For df's:
+    afm_df_deduped_sorted.write.save(hdfs_outpath)
+    # NOTE and then read back in w/
+    # data_path_in_hdfs = 'waze_data/topics/{}/*'.format(city)
+    # hdfs_data_path = "hdfs://{}:9000/{}"
+    # hdfs_inpath =  hdfs_data_path.format(pub_dns, data_path_in_hdfs)
+    # df = sqlContext.read.load(hdfs_inpath)
+    #
+    # For rdd's:
+    # afm_df_deduped_sorted.rdd.saveAsTextFile(hdfs_outpath)
+    # afm_df_deduped_sorted.rdd.saveAsHadoopFile(hdfs_outpath)
 
 raise SystemExit
 
+
+
 ##############################################
 # NOTE to save to casandra
-# NOTE make the table outside of this script somewhere (using cassandra on cli like in cassandra tmux pane) like:
-# in cassandra shell
+# NOTE make the table outside of this script somewhere (using cassandra on cmdline like in
+# the cassandra tmux pane) like (in cassandra shell):
 # $ cqlsh
 # CREATE KEYSPACE waze WITH replication = {'class': 'SimpleStrategy', 'replication_factor':3};
+#
 # cqlsh> USE waze ;
 # cqlsh:waze> CREATE TABLE sanfranpolice (time timestamp, count int, PRIMARY KEY (time, count));    # worked
 # want something like this though
@@ -242,6 +156,50 @@ raise SystemExit
 
 # do this from inside python:
 # https://sites.google.com/a/insightdatascience.com/dataengineering/devsetups
+
+'''
+# his example
+CREATE TABLE daily_location_aggregate (
+    event_time timestamp,
+    spot_name text,
+    availability int,
+    lat int,
+    lon int
+    PRIMARY KEY ( (event_time, spot_name) )
+);
+
+
+# mine
+want daily aggregate for each type (POLICE) for each city (LA) for each date (1-11-16)
+CREATE TABLE date_aggregation (
+    date timestamp,
+    event_type text
+    city text,
+    lat int,
+    lon int
+    PRIMARY KEY ((date, event_type))
+);
+SELECT * FROM date_aggregation WHERE date = '1-11-16'
+                           AND WHERE event_type = 'POLICE'
+
+within a date partition, rows will be ordered by event_type
+all event_types for a given date will be on the same node
+'''
+
+def create_schema(session):
+    # session.execute("""CREATE KEYSPACE waze WITH replication = {'class':'SimpleStrategy', 'replication_factor':3};""")
+    # want daily aggregate for each type (POLICE) for each city (LA) for each date (1-11-16)
+    session.execute("""
+        CREATE TABLE date_aggregation (
+            date timestamp,
+            event_type text
+            city text,
+            lat int,
+            lon int
+            PRIMARY KEY ((date, event_type))
+        );
+    """)
+
 
 def hand_off_to_cassandra(agg):
     from cassandra.cluster import Cluster
@@ -262,6 +220,7 @@ def hand_off_to_cassandra(agg):
         cluster.shutdown()
 
 result.foreachPartition(hand_off_to_cassandra)
+
 
 '''
 from cassandra.cluster import Cluster
