@@ -6,26 +6,112 @@
 # Purpose:
 #----------------------------------------------------------------
 
-from flask import jsonify   #jsonify creates a json representation of the response
-from flask import render_template
-
+from flask import render_template, jsonify, request
 from app import app
 from cassandra.cluster import Cluster
-# setting up connections to cassandra
+from bokeh.charts import Dot, show, output_file
 
-# topic_for_keyspace = 'san-fran-old'
-cluster = Cluster(['ec2-52-89-106-226.us-west-2.compute.amazonaws.com'])
-# session = cluster.connect(topic_for_keyspace)
+# setting up connections to cassandra
+# cluster = Cluster(['ec2-52-89-106-226.us-west-2.compute.amazonaws.com'])
+cluster = Cluster(['52.89.118.67'])
+session = cluster.connect('waze')
 
 
 @app.route('/')
 @app.route('/index')
 def index():
-   user = {'nickname': 'World'} # fake user
-   # mylist = [1,2,3,4]
-   mylist = []
-   return render_template("index.html", title='Home', user=user, mylist=mylist)
+   # user = {'nickname': 'World'} # fake user
+   # # mylist = [1,2,3,4]
+   # mylist = []
+   # return render_template("index.html", title='Home', user=user, mylist=mylist)
+   return render_template("base.html")
 
+
+@app.route('/slides')
+def slides():
+   return render_template("slides.html", title='Slides')
+
+# works!
+# @app.route('/api/date_type/<date>/<_type>')
+# def get_date_type(date, _type):
+        # stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
+        # response = session.execute(stmt, parameters=[date, _type])
+        # response_list = []
+        # for val in response:
+             # response_list.append(val)
+        # jsonresponse = [{"date": x.date,
+                         # "type": x.type,
+                         # "city": x.city,
+                         # "count": x.count,
+                        # }
+                        # for x in response_list]
+        # return jsonify(events=jsonresponse)
+
+
+pg = 'date_type'
+@app.route('/{}'.format(pg))
+def date_type():
+    return render_template("{}.html".format(pg))
+    # return render_template("dots.html")
+'''
+@app.route("/{}".format(pg), methods=['POST'])
+def date_type_post():
+    type_id = request.form["type_id"]
+    date = request.form["date"]
+
+    # type entered is in type_id and date selected in dropdown is in date variable
+    stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
+    response = session.execute(stmt, parameters=[date, type_id])
+    response_list = []
+    for val in response:
+        response_list.append(val)
+    jsonresponse = [{"date": x.date,
+                     "type": x.type,
+                     "city": x.city,
+                     "count": x.count,
+                    } for x in response_list]
+    print jsonresponse
+    return render_template("{}_op.html".format(pg), output=jsonresponse)
+'''
+
+@app.route("/{}".format(pg), methods=['POST'])
+def date_type_post():
+    type_id = request.form["type_id"]
+    date = request.form["date"]
+
+    # type entered is in type_id and date selected in dropdown is in date variable
+    stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
+    response = session.execute(stmt, parameters=[date, type_id])
+
+    data = {
+        'sample': ['1st', '2nd', '1st', '2nd', '1st', '2nd'],
+        'interpreter': ['python', 'python', 'pypy', 'pypy', 'jython', 'jython'],
+        'timing': [-2, 5, 12, 40, 22, 30],
+    }
+    # x-axis labels pulled from the interpreter column, stacking labels from sample column
+    dots = Dot(data, values='timing', label='interpreter',
+            group='sample', agg='mean',
+            title="Python Interpreter Sampling",
+            legend='top_right', width=600)
+    output_file("app/templates/dots.html", title="dots.py example")
+
+    response_list = []
+    for val in response:
+        response_list.append(val)
+    jsonresponse = [{"date": x.date,
+                     "type": x.type,
+                     "city": x.city,
+                     "count": x.count,
+                    } for x in response_list]
+    print jsonresponse
+    return render_template("{}_op.html".format(pg), output=jsonresponse)
+
+
+# For map drawing:
+m = 'map4'
+@app.route('/{}'.format(m))
+def map():
+   return render_template("{}.html".format(m), title=m)
 
 # session = cluster.connect('playground')
 
@@ -42,26 +128,3 @@ def index():
                          # "id": x.id, "message": x.message, "time": x.time} for x in response_list]
         # # print jsonresponse  # list of dicts (one dict for each Row() object from before)
         # return jsonify(emails=jsonresponse)
-
-
-session = cluster.connect('waze')
-# FIXME
-@app.route('/api/<cityevent>')
-# @app.route('/api/<city>/<event>')
-# @app.route('/api/sanfransisco/date/police')
-# def get_police(city, date, police):
-def get_police(cityevent):
-        # stmt = "SELECT * FROM sanfranpolice WHERE time=%s"
-        # stmt = "SELECT * FROM sanfranpolice WHERE *"
-        stmt = "SELECT * FROM sanfranpolice "
-        response = session.execute(stmt)#, parameters=[city, event])
-
-        response_list = []
-        for val in response:
-             response_list.append(val)
-        jsonresponse = [{"time": x.time,
-                         "count": x.count
-                         # "locations": eval(x.locations)
-                         }
-                                for x in response_list]
-        return jsonify(event=jsonresponse)

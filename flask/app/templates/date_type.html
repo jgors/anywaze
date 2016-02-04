@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block date_type %}
+
+<div class="container">
+      <div class="starter-template">
+        <div class="row" style="height:100vh;">
+            <div class="col-md-4 col-md-offset-4" style="margin-top:10vh;">
+                <form action"date_type_op" method="POST">
+                    <div class="form-group text-center">
+                        <label style="font-weight:300; font-size:36px;">Enter a type</label>
+                        <br /><br />
+                        <input type="text" class="form-control" id="type_id" name="type_id" placeholder="POLICE">
+                        <select class="form-control" name="date">
+                            <option>2016-01-27</option>
+                            <option>2016-01-28</option>
+                            <option>2016-01-29</option>
+                            <option>2016-01-30</option>
+                            <option>2016-01-31</option>
+                            <option>2016-02-01</option>
+                            <option>2016-02-02</option>
+                        </select>
+                        <br /><br />
+                        <button type="submit" value="Send" name="type_id-container" class="btn btn-default id-submit">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
