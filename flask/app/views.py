@@ -26,6 +26,10 @@ def index():
    # return render_template("index.html", title='Home', user=user, mylist=mylist)
    return render_template("base.html")
 
+@app.route('/realtime')
+def realtime():
+    return render_template("realtime.html")
+
 
 @app.route('/slides')
 def slides():
@@ -81,8 +85,9 @@ def date_type_post():
 
     # type entered is in type_id and date selected in dropdown is in date variable
     stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
-    response = session.execute(stmt, parameters=[date, type_id])
+    response = session.execute(stmt, parameters=[date, type_id.upper()])
 
+    '''
     data = {
         'sample': ['1st', '2nd', '1st', '2nd', '1st', '2nd'],
         'interpreter': ['python', 'python', 'pypy', 'pypy', 'jython', 'jython'],
@@ -94,6 +99,7 @@ def date_type_post():
             title="Python Interpreter Sampling",
             legend='top_right', width=600)
     output_file("app/templates/dots.html", title="dots.py example")
+    '''
 
     response_list = []
     for val in response:
@@ -105,6 +111,8 @@ def date_type_post():
                     } for x in response_list]
     print jsonresponse
     return render_template("{}_op.html".format(pg), output=jsonresponse)
+
+
 
 
 # For map drawing:

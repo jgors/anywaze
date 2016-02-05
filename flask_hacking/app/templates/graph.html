@@ -1,0 +1,39 @@
+<!-- Need both of these to make it work -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="http://code.highcharts.com/highcharts.js"></script>
+
+<!--TODO can't get the themes to work-->
+<!--<script type="text/javascript" src="/static/js/themes/gray.js"></script>-->
+<!--<script src="/static/js/themes/gray.js"></script>-->
+
+
+<div id="container" style="width:50%; height:400px;"></div>
+<script>
+
+$(function () {
+    $('#container').highcharts({
+        chart: { type: 'bar'},
+        //chart: {{ chart_type|safe }},
+
+        //title: {text: 'Fruit Consumption'},
+        title: {{ title|safe }},
+
+        //xAxis: {categories: ['Apples', 'Bananas', 'Oranges']},
+        xAxis: {{ xAxis|safe }},
+
+        //yAxis: {
+            //title: {text: 'Fruit eaten'}
+        //},
+        yAxis: {{ yAxis|safe }},
+
+        //series: [{name: 'Jane', data: [1, 0, 4, 2]},
+        //         {name: 'John', data: [5, 7, 3, 4]}
+        //        ]
+        series: {{ series|safe }},
+    });
+});
+</script>
+
+
+
+</html>
