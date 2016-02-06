@@ -9,12 +9,25 @@
 from flask import render_template, jsonify, request
 from app import app
 from cassandra.cluster import Cluster
-from bokeh.charts import Dot, show, output_file
+# from bokeh.charts import Dot, show, output_file
+
+import sys, os
+parent_dir = os.path.dirname(os.getcwd())
+sys.path.append(parent_dir)
+from envir_vars import cities_lat_and_long
+
 
 # setting up connections to cassandra
 # cluster = Cluster(['ec2-52-89-106-226.us-west-2.compute.amazonaws.com'])
-cluster = Cluster(['52.89.118.67'])
+cluster = Cluster(['52.89.106.226', '52.89.118.67', '52.34.130.78', '52.89.11.71'])
 session = cluster.connect('waze')
+
+
+# FIXME these should really be populated from the db and not hardcoded here
+event_types = ['accident', 'police', 'road_closed', 'hazard', 'jam']
+dates = ['2016-01-25', '2016-01-26', '2016-01-27', '2016-01-28', '2016-01-29', '2016-01-30',
+         '2016-01-31', '2016-02-01', '2016-02-02']
+cities = sorted(cities_lat_and_long.keys())
 
 
 @app.route('/')
@@ -51,12 +64,6 @@ def slides():
                         # for x in response_list]
         # return jsonify(events=jsonresponse)
 
-
-# pg = 'date_type'
-# @app.route('/{}'.format(pg))
-# def date_type():
-    # # return render_template("dots.html")
-    # return render_template("{}.html".format(pg))
 
 '''
 @app.route("/{}".format(pg), methods=['POST'])
@@ -113,38 +120,39 @@ def date_type_post():
     # print jsonresponse
     # return render_template("{}_op.html".format(pg), output=jsonresponse)
 
+
 def getitem(obj, item, default):
     if item not in obj:
         return default
     else:
         return obj[item]
 
-pg = 'date_type'
-@app.route("/{}".format(pg), methods=['GET'])
-def date_type():
+
+@app.route("/date_and_type", methods=['GET'])
+def date_and_type():
     ''' type_id: eg. 'accident', 'police', etc
         date: eg. '2016-1-27'
     '''
 
     args = request.args
-
-    type_id = getitem(args, 'type_id', 'accident')
-    date = getitem(args, 'date', '2016-1-27')
+    type_id = getitem(args, 'type_id', event_types[0])
+    date = getitem(args, 'date', dates[0])
+    # type_id = getitem(args, 'type_id', 'accident')
+    # date = getitem(args, 'date', '2016-1-27')
 
     # type_id = request.form["type_id"]
     # date = request.form["date"]
 
-    # type entered is in type_id and date selected in dropdown is in date variable
+    # date selected is in date drop down and date selected in date dropdown
     stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
     response = session.execute(stmt, parameters=[date, type_id.upper()])
 
     type_id = str(type_id)
     date = str(date)
 
-    chartID = 'my_chart'
+    # chartID = 'my_chart'
     kwargs = dict(
-        chart = {"renderTo": chartID, "type": 'column', "height": '600px'},
-
+        # chart = {"renderTo": chartID, "type": 'column', "height": '600px'},
         credits = {"text": 'jason gors', "href": 'http://jgors.com'},
         title = {"text": '{} reports'.format(type_id)},
         subtitle = {"text": date},
@@ -152,24 +160,68 @@ def date_type():
         tooltip = {"pointFormat": '%s on %s: <b>{point.y:.0f}</b>' % (type_id, date)},
     )
 
-    series_name = type_id
     series_data = []
     for r in response:
         series_data.append([str(r.city), r.count])
     series_data = sorted(series_data, reverse=True, key=lambda cities_data: cities_data[1])
 
-    kwargs.update(series_name=series_name, series_data=series_data, chartID=chartID)
+    kwargs.update(series_name=type_id, series_data=series_data)#, chartID=chartID)
+    # print kwargs
 
-    # NOTE for some reason this stuff breaks it:
-    # {% extends "base.html" %}
-    # {% block date_type %}
-    # if that stuff is removed, then the graph works
-
-    # return render_template('graph.html', **kwargs)
-    return render_template("{}.html".format(pg), **kwargs)
+    return render_template("date_and_type.html",
+                            event_types=event_types,
+                            dates=dates,
+                            **kwargs)
 
 
+@app.route("/date_and_city", methods=['GET'])
+def date_and_city():
+    ''' date: eg. '2016-1-27'
+        city: eg. 'los_angeles'
+    '''
 
+    args = request.args
+    date = getitem(args, 'date', dates[0])
+    city = getitem(args, 'city', cities[0])
+
+    # date selected is in date drop down and city selected in city dropdown
+    stmt = "select * from date_and_city where date=%s and city=%s"
+    response = session.execute(stmt, parameters=[date, city])
+
+    city = str(city)
+    date = str(date)
+
+    # chartID = 'my_chart'
+    kwargs = dict(
+        # chart = {"renderTo": chartID, "type": 'column', "height": '600px'},
+        credits = {"text": 'jason gors', "href": 'http://jgors.com'},
+        title = {"text": '{} for {}'.format(city, date)},
+    )
+
+
+    d = {}
+    for r in response:
+        _type = str(r.type)
+        subtype = str(r.subtype)
+        count = r.count
+        if r.type not in d:
+            d[_type] = [[subtype, count]]
+        else:
+            d[_type].append([subtype, count])
+
+    series_data = []
+    drilldown_series = []
+    for _type, subtype_and_cnts in d.items():
+        type_cnt = sum([subtype_and_cnt[1] for subtype_and_cnt in subtype_and_cnts])
+        series_data.append({'name': _type, 'drilldown': _type, 'y': type_cnt})
+        drilldown_series.append({'name': _type, 'id': _type, 'data': subtype_and_cnts})
+
+    kwargs.update(series_data=series_data, drilldown_series=drilldown_series)#, chartID=chartID)
+
+    return render_template("date_and_city.html",
+                            cities=cities,
+                            dates=dates,
+                            **kwargs)
 
 
 # For map drawing:
