@@ -12,8 +12,13 @@
 # import envir_vars
 #----------------------------------------------------------------
 
-
 me = 'jason.gors'
+
+# this is the master node (where kafka is waiting)
+cluster_master_pub_dns = 'ec2-52-89-106-226.us-west-2.compute.amazonaws.com'
+hdfs_data_path = "hdfs://{}".format(cluster_master_pub_dns) + ":9000/{}"
+storage_cluster_ips = ['52.89.106.226', '52.89.118.67', '52.34.130.78', '52.89.11.71']
+cassandra_keyspace = 'waze'
 
 # Metro areas in order of bigger to smaller
 # cities = ['NYC', 'Los_Angeles',  'Chicago', 'Dallas', 'Houston', 'Philadelphia', 'DC',
