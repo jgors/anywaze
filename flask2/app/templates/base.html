@@ -54,7 +54,8 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="anywaze.xyz">anywaze</a>
+          <!--<a class="navbar-brand" href="anywaze.xyz">anywaze</a>-->
+          <a class="navbar-brand" href="index">anywaze</a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
@@ -71,10 +72,12 @@
         </div><!--/.nav-collapse -->
       </div>
     </nav>
+    {% block index %}{% endblock %}
     {% block date_and_type %}{% endblock %}
     {% block date_and_city %}{% endblock %}
     {% block realtime_reports %}{% endblock %}
     {% block heatmaps %}{% endblock %}
+
 
     <!--<div class="container">-->
 
