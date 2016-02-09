@@ -46,6 +46,7 @@ sc_sql = SQLContext(sc)
 cities = envir_vars.cities_lat_and_long.keys()
 # cities = ['san-fran-small-wo-newline']
 # topic = cities[0]
+cities = ['cincinnati']
 for city in cities:
     topic = city
 
@@ -123,7 +124,8 @@ for city in cities:
 
     # For saving
     # data_path_out_hdfs = 'testing/{}/'.format(topic)
-    data_path_out_hdfs = 'waze_data/topics/{}/'.format(topic)
+    # data_path_out_hdfs = 'waze_data/topics/{}/'.format(topic)     # old data
+    data_path_out_hdfs = 'waze/topics/{}/'.format(topic)       # new data
     hdfs_out_path = hdfs_data_path.format(data_path_out_hdfs)
     #
     # For df's:
