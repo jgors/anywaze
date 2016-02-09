@@ -15,26 +15,32 @@ parent_dir = os.path.dirname(os.getcwd())
 sys.path.append(parent_dir)
 import envir_vars
 
+import json
+
 from pyspark import SparkContext
 from pyspark.streaming import StreamingContext
 from pyspark.streaming.kafka import KafkaUtils
-import json, datetime
-import sys
+from cassandra.cluster import Cluster
 
+import pyspark_cassandra
+from pyspark_cassandra import streaming
+# from pyspark import SparkContext, SparkConf
+# from pyspark.streaming import StreamingContext
+# from pyspark.streaming.kafka import KafkaUtils
+
+
+# cluster = Cluster(envir_vars.storage_cluster_ips)
+# session = cluster.connect(envir_vars.cassandra_keyspace)
 
 
 if __name__ == "__main__":
     sc = SparkContext(appName="PythonStreamingKafka")
-    # ssc = StreamingContext(sc, 2)   # every 2 seconds
-    ssc = StreamingContext(sc, 1)
-
+    ssc = StreamingContext(sc, 2)   # every 2 seconds
 
     # topics = {'chicago': 1, 'nyc': 1}
     topics = {city: 1 for city in envir_vars.cities_lat_and_long.keys()}
 
-
-    # zkQuorum = '52.89.106.226:2181,52.89.118.67:2181,52.34.130.78:2181,52.89.11.71:2181'
-    kafka_machines = ['52.89.106.226', '52.89.118.67', '52.34.130.78', '52.89.11.71']
+    kafka_machines = envir_vars.storage_cluster_ips
     zkQuorum = ','.join([m + ':2181' for m in kafka_machines])
 
     kafkaStream = KafkaUtils.createStream(ssc, zkQuorum, "GroupNameDoesntMatter", topics)
@@ -42,28 +48,51 @@ if __name__ == "__main__":
     lines = kafkaStream.map(lambda x: x[1])
     # lines.pprint()
 
-    def get_useful_info(alerts):
-        d = {}  # {(lat, lng): [type, subType]
-        for alert in alerts:
-            d.update({(alert['latitude'], alert['longitude']): [alert['type'], alert['subType'], alert['numOfThumbsUp']]})
-        return d
+    def get_useful_info(row):
+        # d = {}  # {(lat, lng): [type, subType]
+        # for alert in alerts:
+            # d.update({(alert['latitude'], alert['longitude']): [alert['type'], alert['subType'], alert['numOfThumbsUp']]})
+        # return d
+        alerts_new = []
+        for alert in row['alerts']:
+            alerts_new.append({'city': row['city'], 'type': alert['type'], 'subtype': alert['subType'],
+                               'numOfThumbsUp': int(alert['numOfThumbsUp']),
+                               'lat': alert['latitude'], 'lng': alert['longitude'],
+                               })
+        return alerts_new
 
-    try:
-        # alertofinterest = 'POLICE'
-        # output = lines.map(lambda l: [alert for alert in json.loads(l)["alerts"] if alert['type'] == alertofinterest])
-        # output = lines.map(lambda l: json.loads(l)["city"])
-        # output.pprint()
-        alerts_now = {}
-        output = lines.map(lambda l: json.loads(l)["alerts"])   # a list of dicts
-        alerts_now = output.map(get_useful_info)
-        alerts_now.pprint()
-    except Exception as e:
-        # TODO log these to file, but don't let some corrupted json response crash it all
-        print "ERROR: something bad happened", e
+
+    output = lines.map(lambda l: json.loads(l))   # a list of dicts
+    # output.pprint()
+
+    alerts_now = output.map(get_useful_info)
+    # alerts_now.pprint()
+
+    afm = alerts_now.flatMap(lambda row: [alert for alert in row])
+    # afm.pprint()
+
+
+
+    tablename = 'realtime'
+    seconds = 7200  # in 2 hours    # 86400 # in one day
+
+    '''
+    cmd = """CREATE TABLE IF NOT EXISTS {tablename} (
+        city text,
+        type text,
+        subtype text,
+        numOfThumbsUp int,
+        lat float,
+        lng float,
+        PRIMARY KEY ((city, type), subtype, lat, lng)
+    );""".format(tablename=tablename)
+    session.execute(cmd)
+    query = 'INSERT INTO {} (city, type, subtype, numOfThumbsUp, lat, lng) VALUES (?, ?, ?, ?, ?, ?) USING TTL {}'.format(tablename, seconds)
+    prepared = session.prepare(query)
+    '''
+
+    afm.foreachRDD(lambda rdd: rdd.saveToCassandra(
+                            envir_vars.cassandra_keyspace, tablename, ttl=seconds))
 
     ssc.start()
     ssc.awaitTermination()
-
-    # counts = lines.flatMap(lambda line: line.split(" ")) \
-        # .map(lambda word: (word, 1)) \
-        # .reduceByKey(lambda a, b: a+b)
