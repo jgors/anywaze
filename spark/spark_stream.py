@@ -56,7 +56,8 @@ if __name__ == "__main__":
         alerts_new = []
         for alert in row['alerts']:
             alerts_new.append({'city': row['city'], 'type': alert['type'], 'subtype': alert['subType'],
-                               'numOfThumbsUp': int(alert['numOfThumbsUp']),
+                               # made this lowercase b/c cassandra column names seem to only allow lowercase
+                               'numofthumbsup': int(alert['numOfThumbsUp']),
                                'lat': alert['latitude'], 'lng': alert['longitude'],
                                })
         return alerts_new
@@ -71,25 +72,18 @@ if __name__ == "__main__":
     afm = alerts_now.flatMap(lambda row: [alert for alert in row])
     # afm.pprint()
 
-
-
     tablename = 'realtime'
     seconds = 7200  # in 2 hours    # 86400 # in one day
 
-    '''
-    cmd = """CREATE TABLE IF NOT EXISTS {tablename} (
-        city text,
-        type text,
-        subtype text,
-        numOfThumbsUp int,
-        lat float,
-        lng float,
-        PRIMARY KEY ((city, type), subtype, lat, lng)
-    );""".format(tablename=tablename)
-    session.execute(cmd)
-    query = 'INSERT INTO {} (city, type, subtype, numOfThumbsUp, lat, lng) VALUES (?, ?, ?, ?, ?, ?) USING TTL {}'.format(tablename, seconds)
-    prepared = session.prepare(query)
-    '''
+    # This would be for doing realtime hotspots:
+    # CREATE TABLE realtime (city text, type text, subtype text, numOfThumbsUp int,
+    #                        lat float, lng float,
+    #                        PRIMARY KEY ((city, type), subtype, lat, lng));
+
+    # This would be for a doing realtime map of everything -- like waze actually does:
+    # CREATE TABLE realtime (city text, type text, subtype text, numOfThumbsUp int,
+    #                        lat float, lng float,
+    #                        PRIMARY KEY ((city), type, subtype, lat, lng));
 
     afm.foreachRDD(lambda rdd: rdd.saveToCassandra(
                             envir_vars.cassandra_keyspace, tablename, ttl=seconds))
