@@ -73,7 +73,7 @@ if __name__ == "__main__":
     # afm.pprint()
 
     tablename = 'realtime'
-    seconds = 7200  # in 2 hours    # 86400 # in one day
+    seconds = 900  # 15min    # 86400 # in one day
 
     # This would be for doing realtime hotspots:
     # CREATE TABLE realtime (city text, type text, subtype text, numOfThumbsUp int,
