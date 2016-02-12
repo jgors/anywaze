@@ -16,8 +16,12 @@ from envir_vars import hdfs_data_path, storage_cluster_ips, cassandra_keyspace
 from pyspark import SparkConf, SparkContext, SQLContext
 from cassandra.cluster import Cluster
 
+
 # FIXME this should be an arg passed into the script rather than hardcoded like this
-data_to_proc = 'heatmaps'
+# data_to_proc = 'date_and_type'
+# data_to_proc = 'date_and_city'
+data_to_proc = 'hotspots'
+
 
 
 # NOTE spark_master_hostname  ==  ip-172-31-1-85
@@ -36,7 +40,8 @@ sc = SparkContext(conf=conf)
 sc.addPyFile('../envir_vars.py')
 sc_sql = SQLContext(sc)
 
-data_path_in_hdfs = 'waze_data/topics/*/*'
+# data_path_in_hdfs = 'waze_data/topics/*/*'
+data_path_in_hdfs = 'waze/topics/*/*'
 hdfs_in_path =  hdfs_data_path.format(data_path_in_hdfs)
 df = sc_sql.read.load(hdfs_in_path)
 
@@ -118,7 +123,7 @@ def make_heatmaps_data_for_cassandra(row):
     return new_row
 
 
-if data_to_proc == 'heatmaps':
+if data_to_proc == 'hotspots':
     rdd_data = df.map(make_heatmaps_data_for_cassandra)
     new_df = rdd_data.toDF()
     # result_heatmaps = sorted(new_df.collect())
@@ -166,7 +171,8 @@ session = cluster.connect(cassandra_keyspace)
 if data_to_proc == 'date_and_type':
     # create table
     # date and type displayed for all cities -- #1 on sheet
-    tablename = 'date_and_type'
+    # tablename = data_to_proc
+    tablename = data_to_proc + '2'
     cmd = """CREATE TABLE {tablename} (
         date text,
         type text,
@@ -197,6 +203,7 @@ elif data_to_proc == 'date_and_city':
     # date and city displayed for all types for all hours -- #2 on sheet
     '''
     tablename = 'date_and_city'
+
     cmd = """CREATE TABLE {tablename} (
         date text,
         type text,
@@ -220,7 +227,9 @@ elif data_to_proc == 'date_and_city':
 
 
 
-    tablename = 'date_and_city'
+    # tablename = data_to_proc
+    tablename = data_to_proc + '2'
+
     cmd = """CREATE TABLE {tablename} (
         date text,
         city text,
@@ -243,8 +252,8 @@ elif data_to_proc == 'date_and_city':
 
 
 
-# elif data_to_proc == 'heatmaps':
-    # tablename = 'heatmaps'
+# elif data_to_proc == 'hotspots':
+    # tablename = 'hotspots'
     # cmd = """CREATE TABLE {tablename} (
         # city text,
         # type text,
@@ -267,8 +276,9 @@ elif data_to_proc == 'date_and_city':
         # session.execute(prepared, (r.city, r.type, r.subtype, r.year_month_day, r.hour, r.lat, r.lng))
     # print "DONE"
 
-elif data_to_proc == 'heatmaps':
-    tablename = 'heatmaps2'
+elif data_to_proc == 'hotspots':
+    # tablename = 'heatmaps2'
+    tablename = data_to_proc + '2'
     cmd = """CREATE TABLE {tablename} (
         city text,
         type text,
