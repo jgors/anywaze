@@ -24,12 +24,12 @@ function initMap() {
   });
 
   // NOTE: This uses cross-domain XHR, and may not work on older browsers.
-  //map.data.loadGeoJson('http://anywaze.xyz:5000/realtime_geojson_api/san_francisco');
-  //map.data.loadGeoJson('/realtime_geojson_api/{{city|safe}}');
+  //map.data.loadGeoJson('http://anywaze.xyz/api_geojson/san_francisco');
+  //map.data.loadGeoJson('/api_geojson/{{city|safe}}');
 }
 
 function loadData() {
-    map.data.loadGeoJson('/realtime_geojson_api/{{city|safe}}');
+    map.data.loadGeoJson('/api_geojson/{{city|safe}}');
     //map.data.setStyle({icon: '/static/icons/police.png'});
     map.data.setStyle(function(feature) {
         var event_type = feature.getProperty('type')
