@@ -7,7 +7,9 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="../../favicon.ico">
+
+    <!--NOTE commented this out b/c it kept 404 ...check into later-->
+    <!--<link rel="icon" href="../../favicon.ico">-->
 
     <title>Anywaze</title>
 
@@ -55,18 +57,21 @@
             <span class="icon-bar"></span>
           </button>
           <!--<a class="navbar-brand" href="anywaze.xyz">anywaze</a>-->
-          <a class="navbar-brand" href="index">anywaze</a>
+          <a class="navbar-brand" href="/"><b>anywaze</b></a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
 
             <!--<li class="active"><a href="#">Home</a></li>-->
             <!--<li><a href="about">About</a></li>-->
-            <li><a href="date_and_type">Event Types All Cities</a></li>
-            <li><a href="date_and_city">City & Event Subtypes</a></li>
-            <li><a href="heatmaps">Heatmaps of Events</a></li>
+            <li><a href="/date_and_type">Events for All Cities</a></li>
+            <li><a href="/date_and_city">Event Subtypes for a City</a></li>
+            <li><a href="/hotspots">Hotspots</a></li>
+            <!--<li><a href="realtime_events">Real-Time Events</a></li>-->
+            <li><a href="http://jgors.com">Personal Site</a></li>
+
             <!--<li><a href="#contact">Contact</a></li>-->
-            <li><a href="slides">Slides</a></li>
+            <!--<li><a href="slides">Slides</a></li>-->
 
           </ul>
         </div><!--/.nav-collapse -->
@@ -75,8 +80,14 @@
     {% block index %}{% endblock %}
     {% block date_and_type %}{% endblock %}
     {% block date_and_city %}{% endblock %}
-    {% block realtime_reports %}{% endblock %}
-    {% block heatmaps %}{% endblock %}
+    {% block hotspots %}{% endblock %}
+    {% block realtime_events %}{% endblock %}
+
+
+    {% block realtime_impact %}{% endblock %}
+    {% block realtime_charts1 %}{% endblock %}
+    {% block realtime_charts2 %}{% endblock %}
+    {% block realtime_charts3 %}{% endblock %}
 
 
     <!--<div class="container">-->
