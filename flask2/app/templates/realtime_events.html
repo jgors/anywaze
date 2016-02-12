@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block realtime_events %}
+
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+    <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"> </script>-->
+
+    <div id="map"></div>
+
+    <script>
+var map;
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 13,
+    center: {{center|safe}}
+  });
+
+  // NOTE: This uses cross-domain XHR, and may not work on older browsers.
+  //map.data.loadGeoJson('http://anywaze.xyz:5000/realtime_geojson_api/san_francisco');
+  //map.data.loadGeoJson('/realtime_geojson_api/{{city|safe}}');
+}
+
+function loadData() {
+    map.data.loadGeoJson('/realtime_geojson_api/{{city|safe}}');
+    //map.data.setStyle({icon: '/static/icons/police.png'});
+    map.data.setStyle(function(feature) {
+        var event_type = feature.getProperty('type')
+        if (event_type == 'POLICE') {
+            return { icon: '/static/icons/police.png'};
+
+        } else if (event_type == 'HAZARD') {
+            return { icon: '/static/icons/hazard.png'};
+
+        } else if (event_type == 'JAM') {
+            return { icon: '/static/icons/jam_moderate.png'};
+
+        } else if (event_type == 'ACCIDENT') {
+            return { icon: '/static/icons/accident.png'};
+
+        } else if (event_type == 'ROAD_CLOSED') {
+            return { icon: '/static/icons/road_closed.png'};
+
+        } else if (event_type == 'CHIT_CHAT') {
+            return { icon: '/static/icons/chit_chat.png'};
+        }
+    });
+
+}
+
+
+function removeOverlay() {
+    map.data.forEach(function(feature) {
+        //filter...
+        map.data.remove(feature);
+    });
+}
+
+
+$(function () {
+    setInterval(removeOverlay, 5000); //5000
+    setInterval(loadData, 5000); //5000
+});
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC17SsLYOnnPMuyxaAOb0HcEgKIQG1j8Ws&signed_in=true&callback=initMap"></script>
+
+{% endblock %}
