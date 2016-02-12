@@ -31,11 +31,6 @@ session = cluster.connect('waze')
 @app.route('/')
 @app.route('/index')
 def index():
-   # user = {'nickname': 'World'} # fake user
-   # # mylist = [1,2,3,4]
-   # mylist = []
-   # return render_template("index.html", title='Home', user=user, mylist=mylist)
-   # return render_template("base.html")
    return render_template("index.html")
 
 
@@ -79,7 +74,8 @@ def date_and_type():
     # date = request.form["date"]
 
     # date selected is in date drop down and type selected in the type dropdown
-    stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
+    # stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
+    stmt = "SELECT * FROM date_and_type2 WHERE date=%s AND type=%s"
     response = session.execute(stmt, parameters=[date, type_id.upper()])
 
     type_id = str(type_id)
@@ -120,7 +116,8 @@ def date_and_city():
     city = getitem(args, 'city', cities[0])
 
     # date selected is in date drop down and city selected in city dropdown
-    stmt = "select * from date_and_city where date=%s and city=%s"
+    # stmt = "select * from date_and_city where date=%s and city=%s"
+    stmt = "select * from date_and_city2 where date=%s and city=%s"
     response = session.execute(stmt, parameters=[date, city])
 
     city = str(city)
@@ -176,7 +173,8 @@ def hotspots():
     # stmt = "select * from heatmaps where date=%s and city=%s and type=%s"
     # response = session.execute(stmt, parameters=[date, city, type_id.upper()])
 
-    stmt = "select * from heatmaps2 where city=%s and type=%s and weekday=%s"
+    # stmt = "select * from heatmaps2 where city=%s and type=%s and weekday=%s"
+    stmt = "select * from hotspots2 where city=%s and type=%s and weekday=%s"
     response = session.execute(stmt, parameters=[city, type_id.upper(), weekday])
 
     # date = str(date)
