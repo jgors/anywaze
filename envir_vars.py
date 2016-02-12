@@ -16,8 +16,10 @@ me = 'jason.gors'
 
 # FIXME these should really be populated from the db and not hardcoded like this
 event_types = ['accident', 'police', 'road_closed', 'hazard', 'jam']
-dates = ['2016-01-25', '2016-01-26', '2016-01-27', '2016-01-28', '2016-01-29', '2016-01-30',
-         '2016-01-31', '2016-02-01', '2016-02-02']
+dates = ['01-25', '01-26', '01-27', '01-28', '01-29', '01-30',
+         '01-31', '02-01', '02-02', '02-03', '02-04', '02-05',
+         '02-06', '02-07', '02-08', '02-09', '02-10', '02-11']
+dates = ['2016-{}'.format(mth_day) for mth_day in dates]
 weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 # this is the master node (where kafka is waiting)
