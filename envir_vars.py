@@ -14,6 +14,12 @@
 
 me = 'jason.gors'
 
+# FIXME these should really be populated from the db and not hardcoded like this
+event_types = ['accident', 'police', 'road_closed', 'hazard', 'jam']
+dates = ['2016-01-25', '2016-01-26', '2016-01-27', '2016-01-28', '2016-01-29', '2016-01-30',
+         '2016-01-31', '2016-02-01', '2016-02-02']
+weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
 # this is the master node (where kafka is waiting)
 cluster_master_pub_dns = 'ec2-52-89-106-226.us-west-2.compute.amazonaws.com'
 hdfs_data_path = "hdfs://{}".format(cluster_master_pub_dns) + ":9000/{}"
