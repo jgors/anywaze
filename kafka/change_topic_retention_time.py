@@ -13,11 +13,14 @@ parent_dir = os.path.dirname(os.getcwd())
 sys.path.append(parent_dir)
 import envir_vars
 
-ms_in_a_month = 2629746000
+# ms_to_save = 2629746000     # ms_in_a_month
+ms_to_save = 129599999  # ms_in_one_and_a_half_days
+
+
 
 for city in envir_vars.cities_lat_and_long.keys():
     cmd = '$KAFKA_HOME/bin/kafka-topics.sh --zookeeper localhost:2181'
-    cmd += ' --alter --topic {} --config retention.ms={}'.format(city, ms_in_a_month)
+    cmd += ' --alter --topic {} --config retention.ms={}'.format(city, ms_to_save)
     sproc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     out, err = sproc.communicate()
     print out
