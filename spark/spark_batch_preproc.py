@@ -46,7 +46,7 @@ sc_sql = SQLContext(sc)
 cities = envir_vars.cities_lat_and_long.keys()
 # cities = ['san-fran-small-wo-newline']
 # topic = cities[0]
-cities = ['cincinnati']
+
 for city in cities:
     topic = city
 
