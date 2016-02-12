@@ -6,6 +6,8 @@
 # Purpose:
 #----------------------------------------------------------------
 
+import json
+
 from flask import render_template, jsonify, request
 from app import app
 from cassandra.cluster import Cluster
@@ -14,20 +16,16 @@ from cassandra.cluster import Cluster
 import sys, os
 parent_dir = os.path.dirname(os.getcwd())
 sys.path.append(parent_dir)
-from envir_vars import cities_lat_and_long
+from envir_vars import cities_lat_and_long, event_types, dates, weekdays
 
+
+cities = sorted(cities_lat_and_long.keys())
+filler = '--'
 
 # setting up connections to cassandra
-# cluster = Cluster(['ec2-52-89-106-226.us-west-2.compute.amazonaws.com'])
 cluster = Cluster(['52.89.106.226', '52.89.118.67', '52.34.130.78', '52.89.11.71'])
 session = cluster.connect('waze')
 
-
-# FIXME these should really be populated from the db and not hardcoded here
-event_types = ['accident', 'police', 'road_closed', 'hazard', 'jam']
-dates = ['2016-01-25', '2016-01-26', '2016-01-27', '2016-01-28', '2016-01-29', '2016-01-30',
-         '2016-01-31', '2016-02-01', '2016-02-02']
-cities = sorted(cities_lat_and_long.keys())
 
 
 @app.route('/')
@@ -37,54 +35,9 @@ def index():
    # # mylist = [1,2,3,4]
    # mylist = []
    # return render_template("index.html", title='Home', user=user, mylist=mylist)
-   return render_template("base.html")
+   # return render_template("base.html")
+   return render_template("index.html")
 
-@app.route('/realtime')
-def realtime():
-    return render_template("realtime.html")
-
-
-@app.route('/slides')
-def slides():
-   return render_template("slides.html", title='Slides')
-
-# works!
-# @app.route('/api/date_type/<date>/<_type>')
-# def get_date_type(date, _type):
-        # stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
-        # response = session.execute(stmt, parameters=[date, _type])
-        # response_list = []
-        # for val in response:
-             # response_list.append(val)
-        # jsonresponse = [{"date": x.date,
-                         # "type": x.type,
-                         # "city": x.city,
-                         # "count": x.count,
-                        # }
-                        # for x in response_list]
-        # return jsonify(events=jsonresponse)
-
-
-'''
-@app.route("/{}".format(pg), methods=['POST'])
-def date_type_post():
-    type_id = request.form["type_id"]
-    date = request.form["date"]
-
-    # type entered is in type_id and date selected in dropdown is in date variable
-    stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
-    response = session.execute(stmt, parameters=[date, type_id])
-    response_list = []
-    for val in response:
-        response_list.append(val)
-    jsonresponse = [{"date": x.date,
-                     "type": x.type,
-                     "city": x.city,
-                     "count": x.count,
-                    } for x in response_list]
-    print jsonresponse
-    return render_template("{}_op.html".format(pg), output=jsonresponse)
-'''
 
 # @app.route("/{}".format(pg), methods=['POST'])
 # def date_type_post():
@@ -93,22 +46,7 @@ def date_type_post():
 
     # # type entered is in type_id and date selected in dropdown is in date variable
     # stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
-    # response = session.execute(stmt, parameters=[date, type_id.upper()])
-
-    # '''
-    # data = {
-        # 'sample': ['1st', '2nd', '1st', '2nd', '1st', '2nd'],
-        # 'interpreter': ['python', 'python', 'pypy', 'pypy', 'jython', 'jython'],
-        # 'timing': [-2, 5, 12, 40, 22, 30],
-    # }
-    # # x-axis labels pulled from the interpreter column, stacking labels from sample column
-    # dots = Dot(data, values='timing', label='interpreter',
-            # group='sample', agg='mean',
-            # title="Python Interpreter Sampling",
-            # legend='top_right', width=600)
-    # output_file("app/templates/dots.html", title="dots.py example")
-    # '''
-
+    # response = session.execute(stmt, parameters=[date, type_id])
     # response_list = []
     # for val in response:
         # response_list.append(val)
@@ -137,13 +75,10 @@ def date_and_type():
     args = request.args
     type_id = getitem(args, 'type_id', event_types[0])
     date = getitem(args, 'date', dates[0])
-    # type_id = getitem(args, 'type_id', 'accident')
-    # date = getitem(args, 'date', '2016-1-27')
-
     # type_id = request.form["type_id"]
     # date = request.form["date"]
 
-    # date selected is in date drop down and date selected in date dropdown
+    # date selected is in date drop down and type selected in the type dropdown
     stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
     response = session.execute(stmt, parameters=[date, type_id.upper()])
 
@@ -154,8 +89,8 @@ def date_and_type():
     kwargs = dict(
         # chart = {"renderTo": chartID, "type": 'column', "height": '600px'},
         credits = {"text": 'jason gors', "href": 'http://jgors.com'},
-        title = {"text": '{} reports'.format(type_id)},
-        subtitle = {"text": date},
+        title = {"text": '{} reports'.format(type_id), 'style': {"fontSize": "36px"}},
+        subtitle = {"text": date, 'style': {"fontSize": "32px"}},
         yAxis = {"min": 0, "title": {"text": 'Number Reported'}},
         tooltip = {"pointFormat": '%s on %s: <b>{point.y:.0f}</b>' % (type_id, date)},
     )
@@ -195,9 +130,9 @@ def date_and_city():
     kwargs = dict(
         # chart = {"renderTo": chartID, "type": 'column', "height": '600px'},
         credits = {"text": 'jason gors', "href": 'http://jgors.com'},
-        title = {"text": '{} for {}'.format(city, date)},
+        title = {"text": '{} - {}'.format(city, date), 'style': {"fontSize": "34px"}
+                },
     )
-
 
     d = {}
     for r in response:
@@ -224,24 +159,133 @@ def date_and_city():
                             **kwargs)
 
 
-# For map drawing:
-m = 'map4'
-@app.route('/{}'.format(m))
-def map():
-   return render_template("{}.html".format(m), title=m)
 
-# session = cluster.connect('playground')
+@app.route("/hotspots", methods=['GET'])
+def hotspots():
+    args = request.args
 
-# @app.route('/api/<email>/<date>')
-# def get_email(email, date):
-        # stmt = "SELECT * FROM email WHERE id=%s and date=%s"
-        # response = session.execute(stmt, parameters=[email, date])
-        # response_list = []
-        # for val in response:
-            # # print val   # is one of those Row(...) objects
-            # response_list.append(val)
-        # # print response_list     # list of Row(...) objects
-        # jsonresponse = [{"first name": x.fname, "last name": x.lname,
-                         # "id": x.id, "message": x.message, "time": x.time} for x in response_list]
-        # # print jsonresponse  # list of dicts (one dict for each Row() object from before)
-        # return jsonify(emails=jsonresponse)
+    city = getitem(args, 'city', filler)
+    # date = getitem(args, 'date', dates[0])
+    # weekday = getitem(args, 'weekday', weekdays[0])
+    weekday = getitem(args, 'weekday', filler)
+    type_id = getitem(args, 'type_id', filler)
+
+
+    # "lat +- 90     -91 < lat < 91"
+    # "lng +- 180    -181 < lng < 181"
+    # stmt = "select * from heatmaps where date=%s and city=%s and type=%s"
+    # response = session.execute(stmt, parameters=[date, city, type_id.upper()])
+
+    stmt = "select * from heatmaps2 where city=%s and type=%s and weekday=%s"
+    response = session.execute(stmt, parameters=[city, type_id.upper(), weekday])
+
+    # date = str(date)
+    city = str(city)
+    type_id = str(type_id)
+    weekday = str(weekday)
+    if city == filler:
+        city = 'san_francisco'
+    lat_centroid, lng_centroid = cities_lat_and_long[city]
+
+    lat_and_lngs = []
+    for r in response:
+        lat_and_lngs.append((r.lat, r.lng))
+
+    return render_template("hotspots.html",
+                           city=city,
+                           type_id=type_id,
+                           weekdays=weekdays,
+                           weekday=weekday,
+                           # date=date,
+                           # city='',
+                           # type_id='',
+                           lat_centroid=lat_centroid,
+                           lng_centroid=lng_centroid,
+                           lat_and_lngs=lat_and_lngs,
+                           cities=cities,
+                           event_types=event_types,
+                           dates=dates,
+                           )
+
+
+@app.route('/api/<city>')
+def realtime_api(city):
+    stmt = "SELECT * FROM realtime WHERE city=%s"
+    response = session.execute(stmt, parameters=[city])
+    response_list = []
+    for x in response:
+        d = {"city": x.city, "type": x.type, "subtype": x.subtype,
+             "numofthumbsup": x.numofthumbsup,
+             "lat": x.lat, "lng": x.lng}
+        response_list.append(d)
+    return jsonify(alerts=response_list)
+
+
+@app.route("/realtime_geojson_api/<city>", methods=['GET'])
+def realtime_geojson_api(city):
+    stmt = "SELECT * FROM realtime WHERE city=%s"
+    response = session.execute(stmt, parameters=[city])
+    response_list = []
+    for x in response:
+        d = {"city": x.city, "type": x.type, "subtype": x.subtype,
+             "numofthumbsup": x.numofthumbsup,
+             "lat": x.lat, "lng": x.lng}
+        response_list.append(d)
+
+    # do a request on this api from the realtime_events page and
+    # deliver back geojson data -- so shape it nicely here:
+    # eventfeed_callback(
+    # {"type":"FeatureCollection",
+        # "features":[
+            # {"type":"Feature", "properties":{"numofthumbsup": 7}, "geometry": {"type":"Point", "coordinates": [-98.7088, 36.4726]}},
+            # {"type":"Feature", "properties":{"numofthumbsup": 2}, "geometry": {"type":"Point", "coordinates": [-98.7151, 36.47273]}},
+        # ]
+    # }
+
+    jsondict = {"type": "FeatureCollection", "features": []}
+    for r in response_list:
+        feature_dict = {"type": "Feature"}
+        properties = {"numofthumbsup": r['numofthumbsup']+1, # don't let there be zeros
+                      "type": r['type']}
+        geometry = {"type": "Point", "coordinates": [r['lng'], r['lat']]}   # these are backwards
+        feature_dict.update(dict(properties=properties, geometry=geometry))
+
+        jsondict["features"].append(feature_dict)
+
+    return jsonify(jsondict)
+
+
+
+@app.route("/realtime_events/<city>", methods=['GET'])
+def realtime_events(city):
+    lat_centroid, lng_centroid = cities_lat_and_long[city]
+    center = {"lat": lat_centroid, "lng": lng_centroid}
+    return render_template("realtime_events.html", center=center, city=city)
+
+
+# with the circles of different sizes depending on numofthumbsup (FIXME)
+@app.route("/realtime_impact/<city>", methods=['GET'])
+def realtime_impact(city):
+    lat_centroid, lng_centroid = cities_lat_and_long[city]
+    center = {"lat": lat_centroid, "lng": lng_centroid}
+    return render_template("realtime_impact.html", center=center, city=city)
+
+
+
+# the insight ajax example
+@app.route('/realtime_ex')
+def realtime_ex():
+    return render_template("realtime_ex.html")
+
+
+
+# these are for the realtime highcharts graphs
+@app.route("/realtime_reports2", methods=['GET'])
+def realtime_reports2():
+    return render_template("realtime_reports2.html")
+
+@app.route("/realtime_reports3", methods=['GET'])
+def realtime_reports3():
+    return render_template("realtime_reports3.html")
+
+
