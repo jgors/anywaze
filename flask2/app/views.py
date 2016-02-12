@@ -221,8 +221,8 @@ def realtime_api(city):
     return jsonify(alerts=response_list)
 
 
-@app.route("/realtime_geojson_api/<city>", methods=['GET'])
-def realtime_geojson_api(city):
+@app.route("/api_geojson/<city>", methods=['GET'])
+def api_geojson(city):
     stmt = "SELECT * FROM realtime WHERE city=%s"
     response = session.execute(stmt, parameters=[city])
     response_list = []
