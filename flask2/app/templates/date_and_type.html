@@ -9,8 +9,10 @@
         <div class="form-group text-center">
             <label style="font-weight:300; font-size:32px;">Enter Event Type & Date:</label>
             <br /><br />
-            <!--<input type="text" class="form-control" id="type_id" name="type_id"
-                    placeholder="accident | police | road_closed | hazard | jam">-->
+
+            <!--<input type="text" class="form-control" id="type_id" name="type_id"-->
+                    <!--placeholder="accident | police | road_closed | hazard | jam">-->
+
             <select class="form-control" id="type_id" name="type_id">
                 {% for etype in event_types %}
                 <option>{{ etype }}</option>
