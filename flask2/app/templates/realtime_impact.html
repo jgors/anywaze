@@ -19,7 +19,7 @@ var map;
 
 function initialize() {
     var mapOptions = {
-        zoom: 3,
+        zoom: 10,
         center: {{center|safe}},
         mapTypeId: google.maps.MapTypeId.Map
     };
@@ -45,7 +45,7 @@ function getCircle(numofthumbsup) {
 /*
 function getData() {
     var script = document.createElement('script');
-    script.src = '/realtime_geojson_api/{{city|safe}}';
+    script.src = '/api_geojson/{{city|safe}}';
     document.getElementsByTagName('head')[0].appendChild(script);
 
     map.data.setStyle(function(feature) {
@@ -68,7 +68,7 @@ function removeOverlay() {
 }
 
 function getData() {
-    map.data.loadGeoJson('/realtime_geojson_api/{{city|safe}}');
+    map.data.loadGeoJson('/api_geojson/{{city|safe}}');
     map.data.setStyle(function(feature) {
         var numofthumbsup = feature.getProperty('numofthumbsup');
         return { icon: getCircle(numofthumbsup) };
