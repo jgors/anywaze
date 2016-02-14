@@ -6,8 +6,6 @@
 # Purpose:
 #----------------------------------------------------------------
 
-import json
-
 from flask import render_template, jsonify, request
 from app import app
 from cassandra.cluster import Cluster
@@ -16,14 +14,13 @@ from cassandra.cluster import Cluster
 import sys, os
 parent_dir = os.path.dirname(os.getcwd())
 sys.path.append(parent_dir)
-from envir_vars import cities_lat_and_long, event_types, dates, weekdays
+from envir_vars import cities_lat_and_long, event_types, dates, weekdays, storage_cluster_ips
 
 
+times_of_day = ['all day', 'morning (6am-12pm)', 'afternoon (12pm-6pm)', 'evening (6pm-12am)', 'night (12am-6am)']
 cities = sorted(cities_lat_and_long.keys())
-filler = '--'
 
-# setting up connections to cassandra
-cluster = Cluster(['52.89.106.226', '52.89.118.67', '52.34.130.78', '52.89.11.71'])
+cluster = Cluster(storage_cluster_ips)
 session = cluster.connect('waze')
 
 
@@ -32,26 +29,6 @@ session = cluster.connect('waze')
 @app.route('/index')
 def index():
    return render_template("index.html")
-
-
-# @app.route("/{}".format(pg), methods=['POST'])
-# def date_type_post():
-    # type_id = request.form["type_id"]
-    # date = request.form["date"]
-
-    # # type entered is in type_id and date selected in dropdown is in date variable
-    # stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
-    # response = session.execute(stmt, parameters=[date, type_id])
-    # response_list = []
-    # for val in response:
-        # response_list.append(val)
-    # jsonresponse = [{"date": x.date,
-                     # "type": x.type,
-                     # "city": x.city,
-                     # "count": x.count,
-                    # } for x in response_list]
-    # print jsonresponse
-    # return render_template("{}_op.html".format(pg), output=jsonresponse)
 
 
 def getitem(obj, item, default):
@@ -67,13 +44,13 @@ def date_and_type():
         date: eg. '2016-1-27'
     '''
 
-    args = request.args
-    type_id = getitem(args, 'type_id', event_types[0])
-    date = getitem(args, 'date', dates[0])
+    req_args = request.args
+    type_id = getitem(req_args, 'type_id', event_types[0])
+    date = getitem(req_args, 'date', dates[0])
     # type_id = request.form["type_id"]
     # date = request.form["date"]
 
-    # date selected is in date drop down and type selected in the type dropdown
+    # date selected is in date drop down and type selected is in the type dropdown
     # stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
     stmt = "SELECT * FROM date_and_type2 WHERE date=%s AND type=%s"
     response = session.execute(stmt, parameters=[date, type_id.upper()])
@@ -97,9 +74,9 @@ def date_and_type():
     series_data = sorted(series_data, reverse=True, key=lambda cities_data: cities_data[1])
 
     kwargs.update(series_name=type_id, series_data=series_data)#, chartID=chartID)
-    # print kwargs
-
     return render_template("date_and_type.html",
+                            type_id_choosen=type_id,
+                            date_choosen=date,
                             event_types=event_types,
                             dates=dates,
                             **kwargs)
@@ -111,9 +88,9 @@ def date_and_city():
         city: eg. 'los_angeles'
     '''
 
-    args = request.args
-    date = getitem(args, 'date', dates[0])
-    city = getitem(args, 'city', cities[0])
+    req_args = request.args
+    date = getitem(req_args, 'date', dates[0])
+    city = getitem(req_args, 'city', 'san_francisco')
 
     # date selected is in date drop down and city selected in city dropdown
     # stmt = "select * from date_and_city where date=%s and city=%s"
@@ -149,24 +126,23 @@ def date_and_city():
         drilldown_series.append({'name': _type, 'id': _type, 'data': subtype_and_cnts})
 
     kwargs.update(series_data=series_data, drilldown_series=drilldown_series)#, chartID=chartID)
-
     return render_template("date_and_city.html",
+                            city_choosen=city,
+                            date_choosen=date,
                             cities=cities,
                             dates=dates,
                             **kwargs)
 
 
 
+# bkup
 @app.route("/hotspots", methods=['GET'])
 def hotspots():
-    args = request.args
 
-    city = getitem(args, 'city', filler)
-    # date = getitem(args, 'date', dates[0])
-    # weekday = getitem(args, 'weekday', weekdays[0])
-    weekday = getitem(args, 'weekday', filler)
-    type_id = getitem(args, 'type_id', filler)
-
+    req_args = request.args
+    city = getitem(req_args, 'city', 'san_francisco')
+    weekday = getitem(req_args, 'weekday', weekdays[0])
+    type_id = getitem(req_args, 'type_id', event_types[0])
 
     # "lat +- 90     -91 < lat < 91"
     # "lng +- 180    -181 < lng < 181"
@@ -177,12 +153,10 @@ def hotspots():
     stmt = "select * from hotspots2 where city=%s and type=%s and weekday=%s"
     response = session.execute(stmt, parameters=[city, type_id.upper(), weekday])
 
-    # date = str(date)
     city = str(city)
     type_id = str(type_id)
     weekday = str(weekday)
-    if city == filler:
-        city = 'san_francisco'
+    # date = str(date)
     lat_centroid, lng_centroid = cities_lat_and_long[city]
 
     lat_and_lngs = []
@@ -190,20 +164,88 @@ def hotspots():
         lat_and_lngs.append((r.lat, r.lng))
 
     return render_template("hotspots.html",
-                           city=city,
-                           type_id=type_id,
-                           weekdays=weekdays,
-                           weekday=weekday,
-                           # date=date,
-                           # city='',
-                           # type_id='',
+                           city_choosen=city,
+                           weekday_choosen=weekday,
+                           type_id_choosen=type_id,
                            lat_centroid=lat_centroid,
                            lng_centroid=lng_centroid,
                            lat_and_lngs=lat_and_lngs,
                            cities=cities,
-                           event_types=event_types,
                            dates=dates,
+                           weekdays=weekdays,
+                           event_types=event_types,
                            )
+
+
+# @app.route("/hotspots", methods=['GET'])
+# def hotspots():
+
+    # req_args = request.args
+    # city = getitem(req_args, 'city', 'san_francisco')
+    # weekday = getitem(req_args, 'weekday', weekdays[0])
+    # type_id = getitem(req_args, 'type_id', event_types[0])
+    # time_of_day = getitem(req_args, 'time_of_day', times_of_day[0])
+
+    # # stmt = "select * from heatmaps where date=%s and city=%s and type=%s"
+    # # response = session.execute(stmt, parameters=[date, city, type_id.upper()])
+
+    # # stmt = "select * from heatmaps2 where city=%s and type=%s and weekday=%s"
+    # stmt = "select * from hotspots2 where city=%s and type=%s and weekday=%s"
+    # response = session.execute(stmt, parameters=[city, type_id.upper(), weekday])
+
+    # city = str(city)
+    # type_id = str(type_id)
+    # weekday = str(weekday)
+    # # date = str(date)
+    # time_of_day = str(time_of_day)
+    # lat_centroid, lng_centroid = cities_lat_and_long[city]
+
+
+    # lat_and_lngs = []
+    # for r in response:
+        # if time_of_day == 'all day':
+            # lat_and_lngs.append((r.lat, r.lng))
+        # elif time_of_day == 'night (12am-6am)':
+            # if 0 <= r.hour <= 5:
+                # lat_and_lngs.append((r.lat, r.lng))
+        # elif time_of_day == 'morning (6am-12pm)':
+            # if 6 <= r.hour <= 11:
+                # lat_and_lngs.append((r.lat, r.lng))
+        # elif time_of_day == 'afternoon (12pm-6pm)':
+            # if 12 <= r.hour <= 17:
+                # lat_and_lngs.append((r.lat, r.lng))
+        # elif time_of_day == 'evening (6pm-12am)':
+            # if 18 <= r.hour <= 23:
+                # lat_and_lngs.append((r.lat, r.lng))
+
+    # return render_template("hotspots.html",
+                           # city_choosen=city,
+                           # weekday_choosen=weekday,
+                           # time_of_day_choosen=time_of_day,
+                           # type_id_choosen=type_id,
+                           # lat_centroid=lat_centroid,
+                           # lng_centroid=lng_centroid,
+                           # lat_and_lngs=lat_and_lngs,
+                           # cities=cities,
+                           # dates=dates,
+                           # weekdays=weekdays,
+                           # times_of_day=times_of_day,
+                           # event_types=event_types,
+                           # )
+# this would go in the html page:
+                # <select class="form-control" id="time_of_day" name="time_of_day">
+                    # {% if time_of_day_choosen != times_of_day[0] %}
+                    # <option>{{ time_of_day_choosen }}</option>
+                    # {% endif %}
+
+                    # {% for tod in times_of_day %}
+                    # <option>{{ tod }}</option>
+                    # {% endfor %}
+                # </select>
+
+
+
+
 
 
 @app.route('/api/<city>')
@@ -232,19 +274,18 @@ def api_geojson(city):
 
     # do a request on this api from the realtime_events page and
     # deliver back geojson data -- so shape it nicely here:
-    # eventfeed_callback(
     # {"type":"FeatureCollection",
         # "features":[
-            # {"type":"Feature", "properties":{"numofthumbsup": 7}, "geometry": {"type":"Point", "coordinates": [-98.7088, 36.4726]}},
-            # {"type":"Feature", "properties":{"numofthumbsup": 2}, "geometry": {"type":"Point", "coordinates": [-98.7151, 36.47273]}},
+            # {"type":"Feature", "properties":{"numofthumbsup": 7, "type": 'xxx', "subtype": 'xxx'}, "geometry": {"type":"Point", "coordinates": [-98.7088, 36.4726]}},
+            # {"type":"Feature", "properties":{"numofthumbsup": 2, "type": 'xxx', "subtype": 'xxx'}, "geometry": {"type":"Point", "coordinates": [-98.7151, 36.47273]}},
         # ]
     # }
 
     jsondict = {"type": "FeatureCollection", "features": []}
     for r in response_list:
         feature_dict = {"type": "Feature"}
-        properties = {"numofthumbsup": r['numofthumbsup']+1, # don't let there be zeros
-                      "type": r['type']}
+        properties = {"numofthumbsup": r['numofthumbsup'],
+                      "type": r['type'], "subtype": r['subtype']}
         geometry = {"type": "Point", "coordinates": [r['lng'], r['lat']]}   # these are backwards
         feature_dict.update(dict(properties=properties, geometry=geometry))
 
@@ -267,6 +308,7 @@ def realtime_impact(city):
     lat_centroid, lng_centroid = cities_lat_and_long[city]
     center = {"lat": lat_centroid, "lng": lng_centroid}
     return render_template("realtime_impact.html", center=center, city=city)
+
 
 
 
