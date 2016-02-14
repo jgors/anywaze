@@ -30,26 +30,70 @@ function initMap() {
 
 function loadData() {
     map.data.loadGeoJson('/api_geojson/{{city|safe}}');
-    //map.data.setStyle({icon: '/static/icons/police.png'});
     map.data.setStyle(function(feature) {
         var event_type = feature.getProperty('type')
+        var event_subtype = feature.getProperty('subtype')
+        if (event_subtype == '') {
+            event_subtype = event_type };
+        var mytitle = event_subtype + " - thumbs up: " + feature.getProperty('numofthumbsup')
+
         if (event_type == 'POLICE') {
-            return { icon: '/static/icons/police.png'};
+            return { icon: '/static/icons/police.png',
+                     title: mytitle};
 
         } else if (event_type == 'HAZARD') {
-            return { icon: '/static/icons/hazard.png'};
+            //return { icon: '/static/icons/hazard.png'};
+            var last_item = event_subtype.split('_').pop();
+            if (last_item == 'CONSTRUCTION') {
+                return { icon: '/static/icons/construction.png',
+                         title: mytitle};
+            } else {
+                return { icon: '/static/icons/hazard.png',
+                         title: mytitle};
+            }
+
 
         } else if (event_type == 'JAM') {
-            return { icon: '/static/icons/jam_moderate.png'};
+            if (event_subtype == 'JAM_MODERATE_TRAFFIC') {
+                return { icon: '/static/icons/jam_moderate.png',
+                         title: mytitle};
+            } else if (event_subtype == 'JAM_HEAVY_TRAFFIC') {
+                return { icon: '/static/icons/jam_heavy.png',
+                         title: mytitle};
+            } else if (event_subtype == 'JAM_STAND_STILL_TRAFFIC') {
+                return { icon: '/static/icons/jam_stand_still.png',
+                         title: mytitle};
+            } else {    //in case the subtype is an empty str
+                return { icon: '/static/icons/jam_moderate.png',
+                         title: mytitle};
+            }
 
         } else if (event_type == 'ACCIDENT') {
-            return { icon: '/static/icons/accident.png'};
+            return { icon: '/static/icons/accident.png',
+                     title: mytitle};
 
         } else if (event_type == 'ROAD_CLOSED') {
-            return { icon: '/static/icons/road_closed.png'};
+            //return { icon: '/static/icons/road_closed.png'};
+            var last_item = event_subtype.split('_').pop();
+            if (last_item == 'CONSTRUCTION') {
+                return { icon: '/static/icons/construction.png',
+                         title: mytitle};
+            } else {
+                return { icon: '/static/icons/road_closed.png',
+                         title: mytitle};
+            }
 
         } else if (event_type == 'CHIT_CHAT') {
-            return { icon: '/static/icons/chit_chat.png'};
+            return { icon: '/static/icons/chit_chat.png',
+                     title: mytitle};
+
+        } else if (event_type == 'MISC') {
+            // i really don't know what this is...
+            return { icon: '/static/icons/hazard.png',
+                     title: mytitle};
+        } else {
+            console.log(event_type);
+            console.log(event_subtype);
         }
     });
 
@@ -57,16 +101,16 @@ function loadData() {
 
 
 function removeOverlay() {
+    // http://stackoverflow.com/a/28518247
     map.data.forEach(function(feature) {
-        //filter...
         map.data.remove(feature);
     });
 }
 
 
 $(function () {
-    setInterval(removeOverlay, 5000); //5000
-    setInterval(loadData, 5000); //5000
+    setInterval(removeOverlay, 4000); //5000
+    setInterval(loadData, 4000); //5000
 });
 
     </script>
