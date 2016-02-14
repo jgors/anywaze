@@ -144,8 +144,7 @@ def hotspots():
     weekday = getitem(req_args, 'weekday', weekdays[0])
     type_id = getitem(req_args, 'type_id', event_types[0])
 
-    # "lat +- 90     -91 < lat < 91"
-    # "lng +- 180    -181 < lng < 181"
+    # lat +- 90:  -91 < lat < 91  &  lng +- 180:  -181 < lng < 181"
     # stmt = "select * from heatmaps where date=%s and city=%s and type=%s"
     # response = session.execute(stmt, parameters=[date, city, type_id.upper()])
 
