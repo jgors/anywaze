@@ -11,13 +11,22 @@
             <br /><br />
             <!--<input type="text" class="form-control" id="type_id" name="type_id"
                     placeholder="accident | police | road_closed | hazard | jam">-->
+
             <select class="form-control" id="city" name="city">
+                {% if city_choosen != cities[0] %}
+                <option>{{ city_choosen }}</option>
+                {% endif %}
+
                 {% for city in cities %}
                 <option>{{ city }}</option>
                 {% endfor %}
             </select>
 
             <select class="form-control" id="date" name="date">
+                {% if date_choosen != dates[0] %}
+                <option>{{ date_choosen }}</option>
+                {% endif %}
+
                 {% for d in dates %}
                 <option>{{ d }}</option>
                 {% endfor %}

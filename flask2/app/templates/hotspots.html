@@ -125,16 +125,7 @@ function getPoints() {
     <!--to pull in the data to redraw the map-->
     <h2><center>
             (scroll down)<br>
-            {{city|safe}}
-
-            {% if weekday != '--' %}
-            - {{weekday|safe}}
-            {% endif %}
-
-            {% if type_id != '--' %}
-            - {{type_id|safe}}
-            {% endif %}
-
+            {{city_choosen|safe}} - {{weekday_choosen|safe}} - {{type_id_choosen|safe}}
     </center></h2>
 
     <div class="container">
@@ -148,6 +139,10 @@ function getPoints() {
                 <br /><br />
 
                 <select class="form-control" id="city" name="city">
+                    {% if city_choosen != cities[0] %}
+                    <option>{{ city_choosen }}</option>
+                    {% endif %}
+
                     {% for city in cities %}
                     <option>{{ city }}</option>
                     {% endfor %}
@@ -155,6 +150,10 @@ function getPoints() {
 
                 <!--
                 <select class="form-control" id="date" name="date">
+                    {% if date_choosen != dates[0] %}
+                    <option>{{ date_choosen }}</option>
+                    {% endif %}
+
                     {% for d in dates %}
                     <option>{{ d }}</option>
                     {% endfor %}
@@ -162,13 +161,27 @@ function getPoints() {
                 -->
 
                 <select class="form-control" id="weekday" name="weekday">
+                    {% if weekday_choosen != weekdays[0] %}
+                    <option>{{ weekday_choosen }}</option>
+                    {% endif %}
+
                     {% for d in weekdays %}
                     <option>{{ d }}</option>
                     {% endfor %}
                 </select>
 
 
+                <!--
+                where time_of_day would go
+                -->
+
+
+
                 <select class="form-control" id="type_id" name="type_id">
+                    {% if type_id_choosen != event_types[0] %}
+                    <option>{{ type_id_choosen }}</option>
+                    {% endif %}
+
                     {% for etypes in event_types %}
                     <option>{{ etypes }}</option>
                     {% endfor %}
