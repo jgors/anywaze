@@ -24,13 +24,6 @@ from cassandra.cluster import Cluster
 
 import pyspark_cassandra
 from pyspark_cassandra import streaming
-# from pyspark import SparkContext, SparkConf
-# from pyspark.streaming import StreamingContext
-# from pyspark.streaming.kafka import KafkaUtils
-
-
-# cluster = Cluster(envir_vars.storage_cluster_ips)
-# session = cluster.connect(envir_vars.cassandra_keyspace)
 
 
 if __name__ == "__main__":
@@ -46,13 +39,9 @@ if __name__ == "__main__":
     kafkaStream = KafkaUtils.createStream(ssc, zkQuorum, "GroupNameDoesntMatter", topics)
     # lines = kafkaStream.map(lambda x: json.loads(x[1]))
     lines = kafkaStream.map(lambda x: x[1])
-    # lines.pprint()
+
 
     def get_useful_info(row):
-        # d = {}  # {(lat, lng): [type, subType]
-        # for alert in alerts:
-            # d.update({(alert['latitude'], alert['longitude']): [alert['type'], alert['subType'], alert['numOfThumbsUp']]})
-        # return d
         alerts_new = []
         for alert in row['alerts']:
             alerts_new.append({'city': row['city'], 'type': alert['type'], 'subtype': alert['subType'],
@@ -64,13 +53,8 @@ if __name__ == "__main__":
 
 
     output = lines.map(lambda l: json.loads(l))   # a list of dicts
-    # output.pprint()
-
     alerts_now = output.map(get_useful_info)
-    # alerts_now.pprint()
-
     afm = alerts_now.flatMap(lambda row: [alert for alert in row])
-    # afm.pprint()
 
     tablename = 'realtime'
     seconds = 300  # 5min    # 86400 # is one day
