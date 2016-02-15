@@ -125,7 +125,7 @@ function getPoints() {
     <!--to pull in the data to redraw the map-->
     <h2><center>
             (scroll down)<br>
-            {{city_choosen|safe}} - {{weekday_choosen|safe}} - {{type_id_choosen|safe}}
+            {{city_choosen|safe}} - {{weekday_choosen|safe}} - {{time_of_day_choosen|safe}} - {{type_id_choosen|safe}}
     </center></h2>
 
     <div class="container">
@@ -135,7 +135,7 @@ function getPoints() {
         <form action"date_and_city" method="GET">
             <div class="form-group text-center">
                 <!--<label style="font-weight:300; font-size:24px;">Enter City, Type & Date:</label>-->
-                <label style="font-weight:300; font-size:24px;">Enter City, Day & Event Type:</label>
+                <label style="font-weight:300; font-size:24px;">Enter City, Day, Time & Event Type:</label>
                 <br /><br />
 
                 <select class="form-control" id="city" name="city">
@@ -170,12 +170,15 @@ function getPoints() {
                     {% endfor %}
                 </select>
 
+                <select class="form-control" id="time_of_day" name="time_of_day">
+                    {% if time_of_day_choosen != times_of_day[0] %}
+                    <option>{{ time_of_day_choosen }}</option>
+                    {% endif %}
 
-                <!--
-                where time_of_day would go
-                -->
-
-
+                    {% for tod in times_of_day %}
+                    <option>{{ tod }}</option>
+                    {% endfor %}
+                </select>
 
                 <select class="form-control" id="type_id" name="type_id">
                     {% if type_id_choosen != event_types[0] %}
