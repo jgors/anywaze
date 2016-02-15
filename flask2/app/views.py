@@ -14,10 +14,8 @@ from cassandra.cluster import Cluster
 import sys, os
 parent_dir = os.path.dirname(os.getcwd())
 sys.path.append(parent_dir)
-from envir_vars import cities_lat_and_long, event_types, dates, weekdays, storage_cluster_ips
+from envir_vars import cities_lat_and_long, event_types, dates, weekdays, storage_cluster_ips, times_of_day, hours_dict
 
-
-times_of_day = ['all day', 'morning (6am-12pm)', 'afternoon (12pm-6pm)', 'evening (6pm-12am)', 'night (12am-6am)']
 cities = sorted(cities_lat_and_long.keys())
 
 cluster = Cluster(storage_cluster_ips)
@@ -51,8 +49,8 @@ def date_and_type():
     # date = request.form["date"]
 
     # date selected is in date drop down and type selected is in the type dropdown
-    # stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
-    stmt = "SELECT * FROM date_and_type2 WHERE date=%s AND type=%s"
+    # stmt = "SELECT * FROM date_and_type2 WHERE date=%s AND type=%s"
+    stmt = "SELECT * FROM date_and_type WHERE date=%s AND type=%s"
     response = session.execute(stmt, parameters=[date, type_id.upper()])
 
     type_id = str(type_id)
@@ -93,8 +91,8 @@ def date_and_city():
     city = getitem(req_args, 'city', 'san_francisco')
 
     # date selected is in date drop down and city selected in city dropdown
-    # stmt = "select * from date_and_city where date=%s and city=%s"
-    stmt = "select * from date_and_city2 where date=%s and city=%s"
+    # stmt = "select * from date_and_city2 where date=%s and city=%s"
+    stmt = "select * from date_and_city where date=%s and city=%s"
     response = session.execute(stmt, parameters=[date, city])
 
     city = str(city)
@@ -134,22 +132,19 @@ def date_and_city():
                             **kwargs)
 
 
-
-# bkup
 @app.route("/hotspots", methods=['GET'])
 def hotspots():
 
     req_args = request.args
-    city = getitem(req_args, 'city', 'san_francisco')
+    city = getitem(req_args, 'city', 'san_francisco')#cities[0]))
     weekday = getitem(req_args, 'weekday', weekdays[0])
+    # weekday = getitem(req_args, 'weekday', 'Monday')
     type_id = getitem(req_args, 'type_id', event_types[0])
+    # type_id = getitem(req_args, 'type_id', 'jam')
+    time_of_day = getitem(req_args, 'time_of_day', times_of_day[0])
 
-    # lat +- 90:  -91 < lat < 91  &  lng +- 180:  -181 < lng < 181"
-    # stmt = "select * from heatmaps where date=%s and city=%s and type=%s"
-    # response = session.execute(stmt, parameters=[date, city, type_id.upper()])
-
-    # stmt = "select * from heatmaps2 where city=%s and type=%s and weekday=%s"
-    stmt = "select * from hotspots2 where city=%s and type=%s and weekday=%s"
+    # stmt = "select * from hotspots2 where city=%s and type=%s and weekday=%s"
+    stmt = "select * from hotspots where city=%s and type=%s and weekday=%s"
     response = session.execute(stmt, parameters=[city, type_id.upper(), weekday])
 
     city = str(city)
@@ -158,13 +153,32 @@ def hotspots():
     # date = str(date)
     lat_centroid, lng_centroid = cities_lat_and_long[city]
 
+
     lat_and_lngs = []
     for r in response:
-        lat_and_lngs.append((r.lat, r.lng))
+        if time_of_day == 'all day':
+            lat_and_lngs.append((r.lat, r.lng))
+        elif time_of_day == 'night (12am-6am)':
+            if 0 <= r.hour <= 5:
+                lat_and_lngs.append((r.lat, r.lng))
+        elif time_of_day == 'morning (6am-12pm)':
+            if 6 <= r.hour <= 11:
+                lat_and_lngs.append((r.lat, r.lng))
+        elif time_of_day == 'afternoon (12pm-6pm)':
+            if 12 <= r.hour <= 17:
+                lat_and_lngs.append((r.lat, r.lng))
+        elif time_of_day == 'evening (6pm-12am)':
+            if 18 <= r.hour <= 23:
+                lat_and_lngs.append((r.lat, r.lng))
+        else:     # for just a single hour specified
+            hour_of_day = hours_dict[time_of_day]
+            if hour_of_day == r.hour:
+                lat_and_lngs.append((r.lat, r.lng))
 
     return render_template("hotspots.html",
                            city_choosen=city,
                            weekday_choosen=weekday,
+                           time_of_day_choosen=time_of_day,
                            type_id_choosen=type_id,
                            lat_centroid=lat_centroid,
                            lng_centroid=lng_centroid,
@@ -172,79 +186,9 @@ def hotspots():
                            cities=cities,
                            dates=dates,
                            weekdays=weekdays,
+                           times_of_day=times_of_day,
                            event_types=event_types,
                            )
-
-
-# @app.route("/hotspots", methods=['GET'])
-# def hotspots():
-
-    # req_args = request.args
-    # city = getitem(req_args, 'city', 'san_francisco')
-    # weekday = getitem(req_args, 'weekday', weekdays[0])
-    # type_id = getitem(req_args, 'type_id', event_types[0])
-    # time_of_day = getitem(req_args, 'time_of_day', times_of_day[0])
-
-    # # stmt = "select * from heatmaps where date=%s and city=%s and type=%s"
-    # # response = session.execute(stmt, parameters=[date, city, type_id.upper()])
-
-    # # stmt = "select * from heatmaps2 where city=%s and type=%s and weekday=%s"
-    # stmt = "select * from hotspots2 where city=%s and type=%s and weekday=%s"
-    # response = session.execute(stmt, parameters=[city, type_id.upper(), weekday])
-
-    # city = str(city)
-    # type_id = str(type_id)
-    # weekday = str(weekday)
-    # # date = str(date)
-    # time_of_day = str(time_of_day)
-    # lat_centroid, lng_centroid = cities_lat_and_long[city]
-
-
-    # lat_and_lngs = []
-    # for r in response:
-        # if time_of_day == 'all day':
-            # lat_and_lngs.append((r.lat, r.lng))
-        # elif time_of_day == 'night (12am-6am)':
-            # if 0 <= r.hour <= 5:
-                # lat_and_lngs.append((r.lat, r.lng))
-        # elif time_of_day == 'morning (6am-12pm)':
-            # if 6 <= r.hour <= 11:
-                # lat_and_lngs.append((r.lat, r.lng))
-        # elif time_of_day == 'afternoon (12pm-6pm)':
-            # if 12 <= r.hour <= 17:
-                # lat_and_lngs.append((r.lat, r.lng))
-        # elif time_of_day == 'evening (6pm-12am)':
-            # if 18 <= r.hour <= 23:
-                # lat_and_lngs.append((r.lat, r.lng))
-
-    # return render_template("hotspots.html",
-                           # city_choosen=city,
-                           # weekday_choosen=weekday,
-                           # time_of_day_choosen=time_of_day,
-                           # type_id_choosen=type_id,
-                           # lat_centroid=lat_centroid,
-                           # lng_centroid=lng_centroid,
-                           # lat_and_lngs=lat_and_lngs,
-                           # cities=cities,
-                           # dates=dates,
-                           # weekdays=weekdays,
-                           # times_of_day=times_of_day,
-                           # event_types=event_types,
-                           # )
-# this would go in the html page:
-                # <select class="form-control" id="time_of_day" name="time_of_day">
-                    # {% if time_of_day_choosen != times_of_day[0] %}
-                    # <option>{{ time_of_day_choosen }}</option>
-                    # {% endif %}
-
-                    # {% for tod in times_of_day %}
-                    # <option>{{ tod }}</option>
-                    # {% endfor %}
-                # </select>
-
-
-
-
 
 
 @app.route('/api/<city>')
@@ -308,13 +252,6 @@ def realtime_impact(city):
     center = {"lat": lat_centroid, "lng": lng_centroid}
     return render_template("realtime_impact.html", center=center, city=city)
 
-
-
-
-# the insight ajax example
-@app.route('/realtime_ex')
-def realtime_ex():
-    return render_template("realtime_ex.html")
 
 
 
