@@ -124,7 +124,6 @@ function getPoints() {
 
     <!--to pull in the data to redraw the map-->
     <h2><center>
-            (scroll down)<br>
             {{city_choosen|safe}} - {{weekday_choosen|safe}} - {{time_of_day_choosen|safe}} - {{type_id_choosen|safe}}
     </center></h2>
 
@@ -135,7 +134,7 @@ function getPoints() {
         <form action"date_and_city" method="GET">
             <div class="form-group text-center">
                 <!--<label style="font-weight:300; font-size:24px;">Enter City, Type & Date:</label>-->
-                <label style="font-weight:300; font-size:24px;">Enter City, Day, Time & Event Type:</label>
+                <label style="font-weight:300; font-size:24px;">Enter City, Day, Average Daily Time & Event Type:</label>
                 <br /><br />
 
                 <select class="form-control" id="city" name="city">
