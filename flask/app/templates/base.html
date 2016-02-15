@@ -7,16 +7,18 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="../../favicon.ico">
 
-    <title>Starter Template for Bootstrap</title>
+    <!--NOTE commented this out b/c it kept 404 ...check into later-->
+    <!--<link rel="icon" href="../../favicon.ico">-->
+
+    <title>Anywaze</title>
 
     <!-- Bootstrap core CSS -->
     <!--<link href="../../dist/css/bootstrap.min.css" rel="stylesheet">-->
     <link href="../static/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+    <!--<link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">-->
 
     <!-- Custom styles for this template -->
     <!--<link href="starter-template.css" rel="stylesheet">-->
@@ -24,13 +26,23 @@
 
     <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
     <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
-    <script src="../../assets/js/ie-emulation-modes-warning.js"></script>
+    <!--<script src="../../assets/js/ie-emulation-modes-warning.js"></script>-->
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
+
+    <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/drilldown.js"></script>
+
+    <!--<script src="../static/js/highcharts.js"></script>-->
+    <!--<script src="../static/js/highcharts-more.js"></script>-->
+
   </head>
 
   <body>
@@ -44,39 +56,91 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">anywaze</a>
+          <!--<a class="navbar-brand" href="anywaze.xyz">anywaze</a>-->
+          <a class="navbar-brand" href="/"><b>anywaze</b></a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
+
+            <!--<li class="active"><a href="#">Home</a></li>-->
+            <!--<li><a href="about">About</a></li>-->
+            <li><a href="/date_and_type">Events Across Cities</a></li>
+            <li><a href="/date_and_city">Event Subtypes for a City</a></li>
+            <li><a href="/hotspots">Hotspots</a></li>
+
+        <li class="dropdown">
+            <!--<a href="#" data-toggle="dropdown" class="dropdown-toggle">Realtime (will be back soon)<b class="caret"></b></a>-->
+            <a href="#" data-toggle="dropdown" class="dropdown-toggle">Realtime<b class="caret"></b></a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby=dropdownMenu>
+                <li><a href="/realtime_events/atlanta">atlanta</a></li>
+                <li><a href="/realtime_events/austin">austin</a></li>
+                <li><a href="/realtime_events/baltimore">baltimore</a></li>
+                <li><a href="/realtime_events/boston">boston</a></li>
+                <li><a href="/realtime_events/chicago">chicago</a></li>
+                <li><a href="/realtime_events/cincinnati">cincinnati</a></li>
+                <li><a href="/realtime_events/dallas">dallas</a></li>
+                <li><a href="/realtime_events/dc">dc</a></li>
+                <li><a href="/realtime_events/denver">denver</a></li>
+                <li><a href="/realtime_events/detroit">detroit</a></li>
+                <li><a href="/realtime_events/houston">houston</a></li>
+                <li><a href="/realtime_events/kansas_city">kansas_city</a></li>
+                <li><a href="/realtime_events/los_angeles">los_angeles</a></li>
+                <li><a href="/realtime_events/miami">miami</a></li>
+                <li><a href="/realtime_events/minneapolis">minneapolis</a></li>
+                <li><a href="/realtime_events/mountain_view">mountain_view</a></li>
+                <li><a href="/realtime_events/nyc">nyc</a></li>
+                <li><a href="/realtime_events/philly">philly</a></li>
+                <li><a href="/realtime_events/phoenix">phoenix</a></li>
+                <li><a href="/realtime_events/portland">portland</a></li>
+                <li><a href="/realtime_events/san_diego">san_diego</a></li>
+                <li><a href="/realtime_events/san_francisco">san_francisco</a></li>
+                <li><a href="/realtime_events/seattle">seattle</a></li>
+                <li><a href="/realtime_events/st_louis">st_louis</a></li>
+                <li><a href="/realtime_events/tampa">tampa</a></li>
+            </ul>
+        </li>
+
+            <li><a href="http://jgors.com">My Personal Site</a></li>
+            <!--<li><a href="https://goo.gl/SsAhv"></a></li>-->
+
+            <!--<li><a href="#contact">Contact</a></li>-->
+            <!--<li><a href="slides">Slides</a></li>-->
+
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
-    {% block date_type %}{% endblock %}
-    {% block date_type_op %}{% endblock %}
+    {% block index %}{% endblock %}
+    {% block date_and_type %}{% endblock %}
+    {% block date_and_city %}{% endblock %}
+    {% block hotspots %}{% endblock %}
+    {% block realtime_events %}{% endblock %}
 
-    <div class="container">
+    {% block realtime_impact %}{% endblock %}
+    {% block realtime_charts1 %}{% endblock %}
+    {% block realtime_charts2 %}{% endblock %}
+    {% block realtime_charts3 %}{% endblock %}
+
+
+    <!--<div class="container">-->
 
       <!--<div class="starter-template">-->
         <!--<h1>Bootstrap starter template</h1>-->
         <!--<p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>-->
       <!--</div>-->
 
-    </div><!-- /.container -->
+    <!--</div>[> /.container <]-->
 
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>-->
+    <!--<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>-->
     <!--<script src="../../dist/js/bootstrap.min.js"></script>-->
     <script src="../static/js/bootstrap.min.js"></script>
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script>
+    <!--<script src="../../assets/js/ie10-viewport-bug-workaround.js"></script>-->
   </body>
 </html>
