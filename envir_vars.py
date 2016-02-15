@@ -22,6 +22,18 @@ dates = ['01-25', '01-26', '01-27', '01-28', '01-29', '01-30',
 dates = ['2016-{}'.format(mth_day) for mth_day in dates]
 weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+hours = []
+for t1 in ['am', 'pm']:
+    hours.append('12{}'.format(t1))
+    for t2 in range(1,12):
+        hours.append("{}{}".format(t2,t1))
+raw_time = range(24)
+hours_dict = dict(zip(hours, raw_time))
+
+times_of_day = ['all day', 'morning (6am-12pm)', 'afternoon (12pm-6pm)',
+                'evening (6pm-12am)', 'night (12am-6am)'] + hours
+
+
 # this is the master node (where kafka is waiting)
 cluster_master_pub_dns = 'ec2-52-89-106-226.us-west-2.compute.amazonaws.com'
 hdfs_data_path = "hdfs://{}".format(cluster_master_pub_dns) + ":9000/{}"
