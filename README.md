@@ -8,7 +8,7 @@ also, here's a video of **anywaze** in action: [click me](TODO)
 
 _________________________________________________________
 
-More specifically, I gathered data from the 25 largest metropolitan areas in the U.S. via a very "unofficial" data collection method.  The resulting data was very messy, so I heavily cleaned and preprocessed this data and then performed analytics on a number of metrics I thought seemed interesting (and as mentioned, also used this real-time data stream to create a Waze community map of reported events).
+More specifically, I gathered data from the 25 largest metropolitan areas in the U.S. via a very "unofficial" data collection method.  The resulting data was very messy, so I had to heavily clean and preprocess this data and then performed analytics on a number of metrics that seemed interesting (and as mentioned, also used this real-time data stream to create a Waze community map of the current user reported events).
 
 Here is the pipeline I used:
 
