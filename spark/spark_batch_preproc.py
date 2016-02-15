@@ -5,7 +5,9 @@
 # Creation Date: 01-21-2016
 # Purpose:  this script just does preprocing of the data; the
 #           interesting processing and handing-off of the data
-#           to Cassandra is in different files.
+#           to Cassandra is done elsewhere.
+# NOTE run this script with:
+#   sh spark_batch_preproc_exe.sh
 #----------------------------------------------------------------
 
 import sys, os
@@ -14,24 +16,17 @@ sys.path.append(parent_dir)
 import envir_vars
 from envir_vars import hdfs_data_path, time_zones
 
-from time import tzset, strftime, gmtime, timezone
+import time
+from time import tzset, strftime, gmtime
 from os import environ
 from pyspark import SparkConf, SparkContext, SQLContext
 
-# NOTE submit jobs to spark like so:
 # NOTE spark_master_hostname  == ip-172-31-1-85
-# this way:
-# $SPARK_HOME/bin/spark-submit --master spark://{spark_master_hostname}:7077 --executor-memory 14000M --driver-memory 14000M spark_batch_preproc.py
-# or with specify libs:
-# spark-submit --master spark://{spark_master_hostname}:7077 --packages TargetHolding/pyspark-cassandra:0.1.5 ~/wazted/spark/spark_batch_preproc.py
-
-# to start the ipython spark repl
-# IPYTHON=1 $SPARK_HOME/bin/pyspark --master spark://{spark_master_hostname}:7077
-# doesn't work...not sure why:
+# to start the ipython spark repl:
 # IPYTHON=1 $SPARK_HOME/bin/pyspark --master spark://{spark_master_hostname}:7077 --executor-memory 14000M --driver-memory 14000M
 
 
-# NOTE this would be for running spark stand-alone (not spark interactive)
+# for running spark stand-alone (not spark interactive)
 # sc = SparkContext("local", "App Name", pyFiles=['MyFile.py', 'lib.zip', 'app.egg'])
 conf = (SparkConf()
          # .setMaster("local")
@@ -44,30 +39,20 @@ sc_sql = SQLContext(sc)
 
 
 cities = envir_vars.cities_lat_and_long.keys()
-# cities = ['san-fran-small-wo-newline']
+# cities = ['san-fran-small-wo-newline']    # for testing/debugging
 # topic = cities[0]
 
 for city in cities:
     topic = city
 
-    # Fpr example:  camus/topics/san_fransisco/hourly/2016/01/21/10
+    # For example:  camus/topics/san_fransisco/hourly/2016/01/21/10
     data_path_in_hdfs = 'camus/topics/{}/*/*/*/*/*'.format(topic)
-    # data_path_in_hdfs = 'testing/{}'.format(topic)
     # data_path_in_hdfs = 'testing/{}/part-r-00184-f5234aaf-93dc-412a-8cea-ca6354e1f72f.gz.parquet'.format(topic)
 
     hdfs_in_path =  hdfs_data_path.format(data_path_in_hdfs)
 
     json_data = sc_sql.read.json(hdfs_in_path)
     # json_data.printSchema()
-
-    # works
-    # def get_alerts(row):
-        # locations = []
-        # for alert in row.alerts:
-            # if alert.type == 'POLICE':
-                # locations.append((alert.latitude, alert.longitude))
-        # return (row.time_stamp, len(locations), locations)
-    # result = json_data.map(get_alerts)
 
 
     def get_alerts(row):
@@ -93,7 +78,7 @@ for city in cities:
                 environ['TZ'] = 'US/Pacific'
                 # dt += ':-0800'
             tzset()
-            row_ts = row.time_stamp - timezone
+            row_ts = row.time_stamp - time.timezone     # need the import like this for timezone
             dt = strftime("%Y-%m-%d %H:%M", gmtime(row_ts))
             wkday = strftime("%A", gmtime(row_ts))
 
@@ -102,7 +87,7 @@ for city in cities:
                                'weekday': wkday,
                                'lat': float(alert.latitude), 'lng': float(alert.longitude),
                                'type': alert.type, 'subtype': alert.subType,
-                               'city': row.city, # uncomment this for the real data
+                               'city': row.city,
                                'numOfThumbsUp': alert.numOfThumbsUp}
             alerts.append(row_reformatted)
         return alerts
@@ -124,8 +109,7 @@ for city in cities:
 
     # For saving
     # data_path_out_hdfs = 'testing/{}/'.format(topic)
-    # data_path_out_hdfs = 'waze_data/topics/{}/'.format(topic)     # old data
-    data_path_out_hdfs = 'waze/topics/{}/'.format(topic)       # new data
+    data_path_out_hdfs = 'waze_data/topics/{}/'.format(topic)
     hdfs_out_path = hdfs_data_path.format(data_path_out_hdfs)
     #
     # For df's:

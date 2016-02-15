@@ -4,8 +4,13 @@
 # Author: Jason Gors <jasonDOTgorsATgmail>
 # Creation Date: 02-02-2016
 # Purpose:  Does the actual processing of the data to be put into
-#           cassandra
+#           Cassandra.
+# NOTE run this script with:
+#   sh spark_batch_proc_exe.sh {arg}    # where arg is one of the args from the accepted_args below
 #----------------------------------------------------------------
+#
+# spark_master_hostname  ==  ip-172-31-1-85
+# $SPARK_HOME/bin/spark-submit --master spark://ip-172-31-1-85:7077 --packages TargetHolding/pyspark-cassandra:0.2.7 --executor-memory 14000M --driver-memory 14000M spark_batch_proc.py
 
 
 import sys, os
@@ -17,20 +22,19 @@ from pyspark import SparkConf, SparkContext, SQLContext
 from cassandra.cluster import Cluster
 
 
-# FIXME this should be an arg passed into the script rather than hardcoded like this
-# data_to_proc = 'date_and_type'
-# data_to_proc = 'date_and_city'
-data_to_proc = 'hotspots'
+accepted_args = ['date_and_type', 'date_and_city', 'hotspots']
+if len(sys.argv) == 1:
+    raise SystemExit, "ERROR: need to pass in an arg from accepted args: {}".format(accepted_args)
+
+arg = sys.argv[1]
+if arg not in accepted_args:
+    raise SystemExit, "ERROR: arg not from accepted args: {}".format(accepted_args)
+else:
+    data_to_proc = arg
 
 
 
-# NOTE spark_master_hostname  ==  ip-172-31-1-85
-# this way                                  {spark_master_hostname}
-# $SPARK_HOME/bin/spark-submit --master spark://ip-172-31-1-85:7077 --packages TargetHolding/pyspark-cassandra:0.2.7 --executor-memory 14000M --driver-memory 14000M spark_batch_proc.py
-
-
-
-# NOTE this would be for running spark stand-alone (not spark interactive)
+# for running spark stand-alone (not spark interactive)
 conf = (SparkConf()
          # .setMaster("local")
          # .set("spark.executor.memory", "1g")
@@ -40,8 +44,8 @@ sc = SparkContext(conf=conf)
 sc.addPyFile('../envir_vars.py')
 sc_sql = SQLContext(sc)
 
-# data_path_in_hdfs = 'waze_data/topics/*/*'
-data_path_in_hdfs = 'waze/topics/*/*'
+data_path_in_hdfs = 'waze_data/topics/*/*'
+# data_path_in_hdfs = 'waze/topics/*/*'
 hdfs_in_path =  hdfs_data_path.format(data_path_in_hdfs)
 df = sc_sql.read.load(hdfs_in_path)
 
@@ -49,11 +53,6 @@ df = sc_sql.read.load(hdfs_in_path)
 # [Row(city=u'atlanta', datetime=u'2016-01-25 08:35', lat=33.764181, lng=-84.371954,
 #      numOfThumbsUp=1, subtype=u'POLICE_VISIBLE', time_stamp=1453710945, type=u'POLICE',
 #      weekday=u'Monday')]
-
-# p = df[df.type == 'POLICE']
-# # another way
-# p = df.filter(df.type == 'POLICE')
-
 
 # do time based stuff the "spark way"
 # from pyspark.sql import functions as sql_funcs
@@ -80,31 +79,23 @@ def make_data_for_cassandra(row):
     return new_row
 
 
-
 if data_to_proc == 'date_and_type':
     rdd_data = df.map(make_data_for_cassandra)
     new_df = rdd_data.toDF()
 
     ###  -->                             key is a tuple          and initially 1 for each thing      then add(/reduce) up all things that have similar keys
     map_reduced_date_and_event = new_df.map(lambda r: ((r.year_month_day, r.city, r.type), 1)).reduceByKey(lambda a,b: a+b)
-    result_date_and_type = sorted(map_reduced_date_and_event.collect())
+    result_date_and_type = sorted(map_reduced_date_and_event.collect())     # dangerous, but not a problem for my data
     # result_date_and_type[0]  ==  ((u'2016-01-25', u'atlanta', u'ACCIDENT'), 97)
 
-
-# map_reduced_date_and_city = new_df.map(lambda r: ((r.city, r.type, r.year_month_day, r.hour), 1)).reduceByKey(lambda a,b: a+b)
-# result_date_and_city = sorted(map_reduced_date_and_city.collect())
-# result_date_and_city[0]  ==  ((u'atlanta', u'ACCIDENT', u'2016-01-25', 10), 1)
 
 elif data_to_proc == 'date_and_city':
     rdd_data = df.map(make_data_for_cassandra)
     new_df = rdd_data.toDF()
 
     map_reduced_date_and_city = new_df.map(lambda r: ((r.year_month_day, r.city, r.type, r.subtype), 1)).reduceByKey(lambda a,b: a+b)
-    result_date_and_city = sorted(map_reduced_date_and_city.collect())
+    result_date_and_city = sorted(map_reduced_date_and_city.collect())     # dangerous, but not a problem for my data
     # result_date_and_city[1]  ==  (( u'2016-01-25', u'atlanta', u'ACCIDENT', u'ACCIDENT_MAJOR'), 16)
-
-
-
 
 
 def make_heatmaps_data_for_cassandra(row):
@@ -127,10 +118,7 @@ if data_to_proc == 'hotspots':
     rdd_data = df.map(make_heatmaps_data_for_cassandra)
     new_df = rdd_data.toDF()
     # result_heatmaps = sorted(new_df.collect())
-    result_heatmaps = new_df.collect()
-
-
-
+    result_heatmaps = new_df.collect()      # dangerous, but not a problem for my data
 
 
 ##############################################
@@ -139,28 +127,6 @@ if data_to_proc == 'hotspots':
 # cqlsh> CREATE KEYSPACE waze WITH replication = {'class': 'SimpleStrategy', 'replication_factor':3};
 # cqlsh> USE waze ;
 # cqlsh:waze> CREATE TABLE ... (var1 timestamp, var2 list, var3 int, PRIMARY KEY (var1, var3));
-
-'''
-def hand_off_to_cassandra(agg):
-    from cassandra.cluster import Cluster
-    if agg:
-        cluster = Cluster(storage_cluster_ips)
-        session = cluster.connect(cassandra_keyspace)
-        for a in agg:
-            cmd = 'INSERT INTO {tablename} (time, count, locations) VALUES (%s, %s, %s)'.format()
-            session.execute(
-                    # 'INSERT INTO sliding_window_batch (monitor, ts_start, time_total) VALUES (%s, %s, %s)', (agg_item[0], 0, agg_item[1]))
-                    # 'INSERT INTO police (time_stamp, num_police, locations) VALUES (%s, %s, %s)', (agg_item[0], agg_item[1], agg_item[2]))
-                    # 'INSERT INTO sanfranpolice (time, count) VALUES (%s, %s)', (agg_item[0], agg_item[1]))    # NOTE works
-                    'INSERT INTO sanfranpolice (time, count, locations) VALUES (%s, %s, %s)', (a[0], a[1], a[2]))
-                    # 'INSERT INTO police (time_stamp, num_police, locations) VALUES (%s, %s, %s)'.format(agg_item[0], agg_item[1], agg_item[2]))
-        session.shutdown()
-        cluster.shutdown()
-
-
-# result.foreachPartition(hand_off_to_cassandra)
-# hand_off_to_cassandra(result)
-'''
 
 cluster = Cluster(storage_cluster_ips)
 session = cluster.connect(cassandra_keyspace)
@@ -171,8 +137,7 @@ session = cluster.connect(cassandra_keyspace)
 if data_to_proc == 'date_and_type':
     # create table
     # date and type displayed for all cities -- #1 on sheet
-    # tablename = data_to_proc
-    tablename = data_to_proc + '2'
+    tablename = data_to_proc
     cmd = """CREATE TABLE {tablename} (
         date text,
         type text,
@@ -194,8 +159,6 @@ if data_to_proc == 'date_and_type':
         session.execute(prepared, (date, _type, city, count))
 
 
-
-
 elif data_to_proc == 'date_and_city':
     # elif 'date_and_city':
     # do the chart below instead of this one here
@@ -203,7 +166,6 @@ elif data_to_proc == 'date_and_city':
     # date and city displayed for all types for all hours -- #2 on sheet
     '''
     tablename = 'date_and_city'
-
     cmd = """CREATE TABLE {tablename} (
         date text,
         type text,
@@ -225,11 +187,7 @@ elif data_to_proc == 'date_and_city':
         session.execute(prepared, (date, _type, city, count))
     '''
 
-
-
-    # tablename = data_to_proc
-    tablename = data_to_proc + '2'
-
+    tablename = data_to_proc
     cmd = """CREATE TABLE {tablename} (
         date text,
         city text,
@@ -251,34 +209,8 @@ elif data_to_proc == 'date_and_city':
         session.execute(prepared, (date, city, _type, subtype, count))
 
 
-
-# elif data_to_proc == 'hotspots':
-    # tablename = 'hotspots'
-    # cmd = """CREATE TABLE {tablename} (
-        # city text,
-        # type text,
-        # subtype text,
-        # date text,
-        # hour int,
-        # lat float,
-        # lng float,
-        # PRIMARY KEY ((city, date, type), hour, lat, lng)
-    # );""".format(tablename=tablename)
-
-    # try:
-        # session.execute(cmd)
-    # except Exception as e:
-        # print e
-
-    # query = 'INSERT INTO {} (city, type, subtype, date, hour, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?)'.format(tablename)
-    # prepared = session.prepare(query)
-    # for r in result_heatmaps:
-        # session.execute(prepared, (r.city, r.type, r.subtype, r.year_month_day, r.hour, r.lat, r.lng))
-    # print "DONE"
-
 elif data_to_proc == 'hotspots':
-    # tablename = 'heatmaps2'
-    tablename = data_to_proc + '2'
+    tablename = data_to_proc
     cmd = """CREATE TABLE {tablename} (
         city text,
         type text,
