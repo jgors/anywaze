@@ -4,7 +4,7 @@
 
 check it out at [anywaze.xyz](http://anywaze.xyz)
 
-also, here's a video of **anywaze** in action: [click me](TODO)
+also, here's a video of **anywaze** in action: [click me](https://www.youtube.com/embed/z166DG1ZCKE)
 
 _________________________________________________________
 
