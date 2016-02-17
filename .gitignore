@@ -1,4 +1,5 @@
 *.pyc
 **/waze_api/logs
+**/waze_api/
 **/spark/derby.log
 **/spark/metastore_db
