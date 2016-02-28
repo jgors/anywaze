@@ -7,6 +7,7 @@
 # http://stackoverflow.com/questions/29129222/changing-kafka-rentention-period-during-runtime
 # http://www.convertunits.com/from/month/to/millisecond
 #----------------------------------------------------------------
+
 import subprocess
 import os, sys
 parent_dir = os.path.dirname(os.getcwd())
@@ -15,8 +16,6 @@ import envir_vars
 
 # ms_to_save = 2629746000     # ms_in_a_month
 ms_to_save = 129599999  # ms_in_one_and_a_half_days
-
-
 
 for city in envir_vars.cities_lat_and_long.keys():
     cmd = '$KAFKA_HOME/bin/kafka-topics.sh --zookeeper localhost:2181'
