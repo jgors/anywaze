@@ -4,14 +4,14 @@
 
 check it out at [anywaze.xyz](http://anywaze.xyz)
 
-also, here's a video of **anywaze** in action: [click me](TODO)
+also, here's a video of **anywaze** in action: [click me](https://www.youtube.com/embed/z166DG1ZCKE)
 
 _________________________________________________________
 
-More specifically, I gathered data from the 25 largest metropolitan areas in the U.S. via a very "unofficial" data collection method.  The resulting data was very messy, so I had to heavily clean and preprocess this data and then performed analytics on a number of metrics that seemed interesting (and as mentioned, also used this real-time data stream to create a Waze community map of the current user reported events).
+More specifically, I gathered data from the 25 largest metropolitan areas in the U.S. via a sort of unofficial data collection method.  The resulting data was very messy, so had to be heavily cleaned and preprocessed, which was then used to perform analytics on a number of metrics that seemed interesting.  Additionally, as mentioned, the real-time data stream was also used to create a Waze community map for the most current user generated events.
 
 Here is the pipeline I used:
 
 ![pipeline1](https://github.com/jgors/anywaze/blob/master/misc/pipeline1.png)
 
-...more details to come.
+...yup, so this is the big picture, but more details to come.
