@@ -8,7 +8,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <!--NOTE commented this out b/c it kept 404 ...check into later-->
+    <!--NOTE commented this out b/c it kept 404ing-->
     <!--<link rel="icon" href="../../favicon.ico">-->
 
     <title>Anywaze</title>
@@ -34,7 +34,6 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-    <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/data.js"></script>
@@ -56,14 +55,12 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <!--<a class="navbar-brand" href="anywaze.xyz">anywaze</a>-->
           <a class="navbar-brand" href="/"><b>anywaze</b></a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
 
             <!--<li class="active"><a href="#">Home</a></li>-->
-            <!--<li><a href="about">About</a></li>-->
             <li><a href="/date_and_type">Events Across Cities</a></li>
             <li><a href="/date_and_city">Event Subtypes for a City</a></li>
             <li><a href="/hotspots">Hotspots</a></li>
@@ -101,9 +98,6 @@
         </li>
 
             <li><a href="http://jgors.com">My Personal Site</a></li>
-            <!--<li><a href="https://goo.gl/SsAhv"></a></li>-->
-
-            <!--<li><a href="#contact">Contact</a></li>-->
             <!--<li><a href="slides">Slides</a></li>-->
 
           </ul>
@@ -115,22 +109,8 @@
     {% block date_and_city %}{% endblock %}
     {% block hotspots %}{% endblock %}
     {% block realtime_events %}{% endblock %}
-
+    {% block realtime_video %}{% endblock %}
     {% block realtime_impact %}{% endblock %}
-    {% block realtime_charts1 %}{% endblock %}
-    {% block realtime_charts2 %}{% endblock %}
-    {% block realtime_charts3 %}{% endblock %}
-
-
-    <!--<div class="container">-->
-
-      <!--<div class="starter-template">-->
-        <!--<h1>Bootstrap starter template</h1>-->
-        <!--<p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>-->
-      <!--</div>-->
-
-    <!--</div>[> /.container <]-->
-
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
